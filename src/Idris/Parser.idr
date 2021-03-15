@@ -413,7 +413,10 @@ mutual
     <|> do b <- bounds (symbol "!" *> simpleExpr fname indents)
            pure (PBang (boundToFC fname b) b.val)
     <|> do b <- bounds (symbol "[|" *> expr pdef fname indents <* symbol "|]")
-           pure (PIdiom (boundToFC fname b) b.val)
+           pure (PIdiom (boundToFC fname b) Nothing b.val)
+    <|> do ns <- namespaceId
+           b  <- bounds (symbol "[|" *> expr pdef fname indents <* symbol "|]")
+           pure (PIdiom (boundToFC fname b) (Just ns) b.val)
     <|> do b <- bounds (pragma "runElab" *> expr pdef fname indents)
            pure (PRunElab (boundToFC fname b) b.val)
     <|> do b <- bounds $ do pragma "logging"

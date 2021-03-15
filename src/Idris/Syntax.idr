@@ -85,7 +85,7 @@ mutual
        PMultiline : FC -> (indent : Nat) -> List (List PStr) -> PTerm
        PDoBlock : FC -> Maybe Namespace -> List PDo -> PTerm
        PBang : FC -> PTerm -> PTerm
-       PIdiom : FC -> PTerm -> PTerm
+       PIdiom : FC -> Maybe Namespace -> PTerm -> PTerm
        PList : FC -> List PTerm -> PTerm
        PPair : FC -> PTerm -> PTerm -> PTerm
        PDPair : FC -> PTerm -> PTerm -> PTerm -> PTerm
@@ -147,7 +147,7 @@ mutual
   getPTermLoc (PMultiline fc _ _) = fc
   getPTermLoc (PDoBlock fc _ _) = fc
   getPTermLoc (PBang fc _) = fc
-  getPTermLoc (PIdiom fc _) = fc
+  getPTermLoc (PIdiom fc _ _) = fc
   getPTermLoc (PList fc _) = fc
   getPTermLoc (PPair fc _ _) = fc
   getPTermLoc (PDPair fc _ _ _) = fc
@@ -596,7 +596,7 @@ mutual
     showPrec d (PDoBlock _ ns ds)
         = "do " ++ showSep " ; " (map showDo ds)
     showPrec d (PBang _ tm) = "!" ++ showPrec d tm
-    showPrec d (PIdiom _ tm) = "[|" ++ showPrec d tm ++ "|]"
+    showPrec d (PIdiom _ ns tm) = "[|" ++ showPrec d tm ++ "|]"
     showPrec d (PList _ xs)
         = "[" ++ showSep ", " (map (showPrec d) xs) ++ "]"
     showPrec d (PPair _ l r) = "(" ++ showPrec d l ++ ", " ++ showPrec d r ++ ")"
@@ -929,8 +929,8 @@ mapPTermM f = goPTerm where
     goPTerm (PBang fc x) =
       PBang fc <$> goPTerm x
       >>= f
-    goPTerm (PIdiom fc x) =
-      PIdiom fc <$> goPTerm x
+    goPTerm (PIdiom fc ns x) =
+      PIdiom fc ns <$> goPTerm x
       >>= f
     goPTerm (PList fc xs) =
       PList fc <$> goPTerms xs

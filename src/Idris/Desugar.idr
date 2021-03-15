@@ -122,14 +122,19 @@ bindBangs ((n, fc, btm) :: bs) tm
                           (ILam EmptyFC top Explicit (Just n)
                                 (Implicit fc False) tm)
 
-idiomise : FC -> RawImp -> RawImp
-idiomise fc (IAlternative afc u alts)
-  = IAlternative afc (mapAltType (idiomise afc) u) (idiomise afc <$> alts)
-idiomise fc (IApp afc f a)
-    = IApp fc (IApp fc (IVar fc (UN "<*>"))
-                    (idiomise afc f))
+idiomise : FC -> Maybe Namespace -> RawImp -> RawImp
+idiomise fc mns (IAlternative afc u alts)
+  = IAlternative afc (mapAltType (idiomise afc mns) u) (idiomise afc mns <$> alts)
+
+idiomise fc mns (IApp afc f a) =
+  let appN  = UN "<*>"
+      appNS = maybe appN (\ns => NS ns appN) mns
+   in IApp fc (IApp fc (IVar fc appNS) (idiomise afc mns f))
                     a
-idiomise fc fn = IApp fc (IVar fc (UN "pure")) fn
+idiomise fc mns fn =
+  let pureN  = UN "pure"
+      pureNS = maybe pureN (\ns => NS ns pureN) mns
+   in IApp fc (IVar fc pureNS) fn
 
 pairname : Name
 pairname = NS builtinNS (UN "Pair")
@@ -299,10 +304,10 @@ mutual
                               bangNames $= ((bn, fc, itm) ::)
                             } bs)
            pure (IVar EmptyFC bn)
-  desugarB side ps (PIdiom fc term)
+  desugarB side ps (PIdiom fc mns term)
       = do itm <- desugarB side ps term
            logRaw "desugar.idiom" 10 "Desugaring idiom for" itm
-           let val = idiomise fc itm
+           let val = idiomise fc mns itm
            logRaw "desugar.idiom" 10 "Desugared to" val
            pure val
   desugarB side ps (PList fc args)
