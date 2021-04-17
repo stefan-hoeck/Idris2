@@ -127,6 +127,52 @@ DecEq a => DecEq (List1 a) where
 -- A postulate would be better, but erasure analysis may think they're needed
 -- for computation in a higher order setting.
 
+private
+primitiveEq : forall x, y . x = y
+primitiveEq = believe_me (Refl {x})
+
+private
+primitiveNotEq : forall x, y . x = y -> Void
+primitiveNotEq prf = believe_me {b = Void} ()
+
+--------------------------------------------------------------------------------
+-- Bits8
+--------------------------------------------------------------------------------
+
+public export
+implementation DecEq Bits8 where
+    decEq x y = case x == y of -- Blocks if x or y not concrete
+                     True => Yes primitiveEq
+                     False => No primitiveNotEq
+
+--------------------------------------------------------------------------------
+-- Bits16
+--------------------------------------------------------------------------------
+public export
+implementation DecEq Bits16 where
+    decEq x y = case x == y of -- Blocks if x or y not concrete
+                     True => Yes primitiveEq
+                     False => No primitiveNotEq
+
+--------------------------------------------------------------------------------
+-- Bits32
+--------------------------------------------------------------------------------
+
+public export
+implementation DecEq Bits32 where
+    decEq x y = case x == y of -- Blocks if x or y not concrete
+                     True => Yes primitiveEq
+                     False => No primitiveNotEq
+
+--------------------------------------------------------------------------------
+-- Bits64
+--------------------------------------------------------------------------------
+
+public export
+implementation DecEq Bits64 where
+    decEq x y = case x == y of -- Blocks if x or y not concrete
+                     True => Yes primitiveEq
+                     False => No primitiveNotEq
 
 --------------------------------------------------------------------------------
 -- Int
@@ -136,10 +182,6 @@ implementation DecEq Int where
     decEq x y = case x == y of -- Blocks if x or y not concrete
                      True => Yes primitiveEq
                      False => No primitiveNotEq
-       where primitiveEq : forall x, y . x = y
-             primitiveEq = believe_me (Refl {x})
-             primitiveNotEq : forall x, y . x = y -> Void
-             primitiveNotEq prf = believe_me {b = Void} ()
 
 --------------------------------------------------------------------------------
 -- Char
@@ -149,10 +191,6 @@ implementation DecEq Char where
     decEq x y = case x == y of -- Blocks if x or y not concrete
                      True => Yes primitiveEq
                      False => No primitiveNotEq
-       where primitiveEq : forall x, y . x = y
-             primitiveEq = believe_me (Refl {x})
-             primitiveNotEq : forall x, y . x = y -> Void
-             primitiveNotEq prf = believe_me {b = Void} ()
 
 --------------------------------------------------------------------------------
 -- Integer
@@ -162,10 +200,6 @@ implementation DecEq Integer where
     decEq x y = case x == y of -- Blocks if x or y not concrete
                      True => Yes primitiveEq
                      False => No primitiveNotEq
-       where primitiveEq : forall x, y . x = y
-             primitiveEq = believe_me (Refl {x})
-             primitiveNotEq : forall x, y . x = y -> Void
-             primitiveNotEq prf = believe_me {b = Void} ()
 
 --------------------------------------------------------------------------------
 -- String
@@ -175,7 +209,3 @@ implementation DecEq String where
     decEq x y = case x == y of -- Blocks if x or y not concrete
                      True => Yes primitiveEq
                      False => No primitiveNotEq
-       where primitiveEq : forall x, y . x = y
-             primitiveEq = believe_me (Refl {x})
-             primitiveNotEq : forall x, y . x = y -> Void
-             primitiveNotEq prf = believe_me {b = Void} ()
