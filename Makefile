@@ -67,6 +67,12 @@ src/IdrisPaths.idr: FORCE
 
 FORCE:
 
+boostrap-prelude:
+	${MAKE} -C bootstrap/libs/prelude IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
+
+boostrap-base: prelude
+	${MAKE} -C bootstrap/libs/base IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
+
 prelude:
 	${MAKE} -C libs/prelude IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
 
@@ -83,6 +89,8 @@ test-lib: contrib
 	${MAKE} -C libs/test IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
 
 libs : prelude base contrib network test-lib
+
+bootstrap-libs : bootstrap-prelude bootstrap-base
 
 libdocs:
 	${MAKE} -C libs/prelude docs IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
@@ -121,6 +129,10 @@ support-clean:
 	@${MAKE} -C support/c clean
 	@${MAKE} -C support/refc clean
 
+clean-bootstrap-libs:
+	${MAKE} -C bootstrap/libs/prelude clean
+	${MAKE} -C bootstrap/libs/base clean
+
 clean-libs:
 	${MAKE} -C libs/prelude clean
 	${MAKE} -C libs/base clean
@@ -133,6 +145,8 @@ clean: clean-libs support-clean testenv-clean
 	$(RM) src/IdrisPaths.idr
 	${MAKE} -C tests clean
 	$(RM) -r build
+
+bootstrap-install: install-idris2 install-support install-bootstrap-libs
 
 install: install-idris2 install-support install-libs
 
@@ -163,6 +177,10 @@ install-support:
 	install support/js/* ${PREFIX}/${NAME_VERSION}/support/js
 	@${MAKE} -C support/c install
 	@${MAKE} -C support/refc install
+
+install-bootstrap-libs:
+	${MAKE} -C bootstrap/libs/prelude install IDRIS2?=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
+	${MAKE} -C bootstrap/libs/base install IDRIS2?=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
 
 install-libs:
 	${MAKE} -C libs/prelude install IDRIS2?=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
