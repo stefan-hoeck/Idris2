@@ -44,7 +44,7 @@ TEST_PREFIX ?= ${IDRIS2_CURDIR}/build/env
 IDRIS2_BOOT_PREFIX := ${IDRIS2_CURDIR}/bootstrap
 
 # These are the library paths in the build dir to be used during bootstrapping
-export IDRIS2_BOOT_PATH := "${IDRIS2_CURDIR}/bootstrap/libs/prelude/build/ttc${SEP}${IDRIS2_CURDIR}/bootstrap/libs/base/build/ttc"
+export IDRIS2_BOOT_PATH := "${IDRIS2_CURDIR}/bootstrap/libs/prelude/build/ttc${SEP}${IDRIS2_CURDIR}/bootstrap/libs/base/build/ttc${SEP}${IDRIS2_CURDIR}/bootstrap/libs/network/build/ttc"
 
 # These are the library paths in the build dir to be used during build
 export IDRIS2_LIBS_PATH := "${IDRIS2_CURDIR}/libs/prelude/build/ttc${SEP}${IDRIS2_CURDIR}/libs/base/build/ttc${SEP}${IDRIS2_CURDIR}/libs/contrib/build/ttc${SEP}${IDRIS2_CURDIR}/libs/network/build/ttc${SEP}${IDRIS2_CURDIR}/libs/test/build/ttc"
@@ -76,6 +76,9 @@ bootstrap-prelude:
 bootstrap-base: bootstrap-prelude
 	${MAKE} -C bootstrap/libs/base IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
 
+bootstrap-network: bootstrap-prelude
+	${MAKE} -C bootstrap/libs/network IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
+
 prelude:
 	${MAKE} -C libs/prelude IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_LIBS_PATH}
 
@@ -93,7 +96,7 @@ test-lib: contrib
 
 libs : prelude base contrib network test-lib
 
-bootstrap-libs : bootstrap-prelude bootstrap-base
+bootstrap-libs : bootstrap-prelude bootstrap-base bootstrap-network
 
 libdocs:
 	${MAKE} -C libs/prelude docs IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_LIBS_PATH}
@@ -184,6 +187,7 @@ install-support:
 install-bootstrap-libs:
 	${MAKE} -C bootstrap/libs/prelude install IDRIS2?=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
 	${MAKE} -C bootstrap/libs/base install IDRIS2?=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
+	${MAKE} -C bootstrap/libs/network install IDRIS2?=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
 
 install-libs:
 	${MAKE} -C libs/prelude install IDRIS2?=${TARGET} IDRIS2_PATH=${IDRIS2_LIBS_PATH}
