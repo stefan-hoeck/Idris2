@@ -67,10 +67,10 @@ src/IdrisPaths.idr: FORCE
 
 FORCE:
 
-boostrap-prelude:
+bootstrap-prelude:
 	${MAKE} -C bootstrap/libs/prelude IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
 
-boostrap-base: prelude
+bootstrap-base: bootstrap-prelude
 	${MAKE} -C bootstrap/libs/base IDRIS2=${TARGET} IDRIS2_PATH=${IDRIS2_BOOT_PATH}
 
 prelude:
