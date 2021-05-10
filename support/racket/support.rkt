@@ -17,10 +17,14 @@
   (lambda (x bits)
     (modulo x (arithmetic-shift 1 bits))))
 
-(define bu+ (lambda (x y bits) (blodwen-toUnsignedInt (+ x y) bits)))
+(define blodwen-toUnsignedIntMask
+  (lambda (x mask)
+    (bitwise-and x mask)))
+
+(define bu+ (lambda (x y mask) (blodwen-toUnsignedIntMask (+ x y) mask)))
 (define bu- (lambda (x y bits) (blodwen-toUnsignedInt (- x y) bits)))
-(define bu* (lambda (x y bits) (blodwen-toUnsignedInt (* x y) bits)))
-(define bu/ (lambda (x y bits) (blodwen-toUnsignedInt (quotient x y) bits)))
+(define bu* (lambda (x y mask) (blodwen-toUnsignedIntMask (* x y) mask)))
+(define bu/ (lambda (x y) (quotient x y)))
 
 (define bs+ (lambda (x y bits) (blodwen-toSignedInt (+ x y) bits)))
 (define bs- (lambda (x y bits) (blodwen-toSignedInt (- x y) bits)))
@@ -44,7 +48,7 @@
 (define bits64->bits16 (lambda (x) (modulo x (expt 2 16))))
 (define bits64->bits32 (lambda (x) (modulo x (expt 2 32))))
 
-(define blodwen-bits-shl (lambda (x y bits) (remainder (arithmetic-shift x y) (arithmetic-shift 1 bits))))
+(define blodwen-bits-shl (lambda (x y mask) (bitwise-and (arithmetic-shift x y) mask)))
 (define blodwen-shl (lambda (x y) (arithmetic-shift x y)))
 (define blodwen-shr (lambda (x y) (arithmetic-shift x (- y))))
 (define blodwen-and (lambda (x y) (bitwise-and x y)))

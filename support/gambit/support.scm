@@ -26,10 +26,14 @@
   (lambda (x bits)
     (modulo x (arithmetic-shift 1 bits))))
 
-(define bu+ (lambda (x y bits) (blodwen-toUnsignedInt (+ x y) bits)))
+(define blodwen-toUnsignedIntMask
+  (lambda (x mask)
+    (bitwise-and x mask)))
+
+(define bu+ (lambda (x y mask) (blodwen-toUnsignedIntMask (+ x y) mask)))
 (define bu- (lambda (x y bits) (blodwen-toUnsignedInt (- x y) bits)))
-(define bu* (lambda (x y bits) (blodwen-toUnsignedInt (* x y) bits)))
-(define bu/ (lambda (x y bits) (blodwen-toUnsignedInt (quotient x y) bits)))
+(define bu* (lambda (x y mask) (blodwen-toUnsignedInt (* x y) mask)))
+(define bu/ (lambda (x y) (quotient x y)))
 
 (define bs+ (lambda (x y bits) (blodwen-toSignedInt (+ x y) bits)))
 (define bs- (lambda (x y bits) (blodwen-toSignedInt (- x y) bits)))
@@ -78,9 +82,8 @@
 (define-macro (blodwen-and . args) `(bitwise-and ,@args))
 (define-macro (blodwen-or . args) `(bitwise-ior ,@args))
 (define-macro (blodwen-xor . args) `(bitwise-xor ,@args))
-(define-macro (blodwen-bits-shl x y bits)
-                   `(remainder (arithmetic-shift ,x ,y)
-                               (arithmetic-shift 1 ,bits)))
+(define-macro (blodwen-bits-shl x y mask)
+                   `(bitwise-and (arithmetic-shift ,x ,y) mask))
 (define-macro (blodwen-shl x y) `(arithmetic-shift ,x ,y))
 (define-macro (blodwen-shr x y) `(arithmetic-shift ,x (- ,y)))
 

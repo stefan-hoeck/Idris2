@@ -58,9 +58,15 @@ op o args = "(" ++ o ++ " " ++ showSep " " args ++ ")"
 boolop : String -> List String -> String
 boolop o args = "(or (and " ++ op o args ++ " 1) 0)"
 
+maskFor : Int -> String
+maskFor 8 = "255"
+maskFor 16 = "65535"
+maskFor 32 = "4294967295"
+maskFor _  = "18446744073709551615"
+
 add : Maybe IntKind -> String -> String -> String
 add (Just $ Signed $ P n)   x y = op "bs+" [x, y, show (n-1)]
-add (Just $ Unsigned n)     x y = op "bu+" [x, y, show n]
+add (Just $ Unsigned n)     x y = op "bu+" [x, y, maskFor n]
 add _                       x y = op "+" [x, y]
 
 sub : Maybe IntKind -> String -> String -> String
@@ -70,19 +76,19 @@ sub _                       x y = op "-" [x, y]
 
 mul : Maybe IntKind -> String -> String -> String
 mul (Just $ Signed $ P n)   x y = op "bs*" [x, y, show (n-1)]
-mul (Just $ Unsigned n)     x y = op "bu*" [x, y, show n]
+mul (Just $ Unsigned n)     x y = op "bu*" [x, y, maskFor n]
 mul _                       x y = op "*" [x, y]
 
 div : Maybe IntKind -> String -> String -> String
 div (Just $ Signed Unlimited) x y = op "quotient" [x, y]
 div (Just $ Signed $ P n)     x y = op "bs/" [x, y, show (n-1)]
-div (Just $ Unsigned n)       x y = op "bu/" [x, y, show n]
+div (Just $ Unsigned n)       x y = op "bu/" [x, y]
 div _                         x y = op "/" [x, y]
 
 shl : Maybe IntKind -> String -> String -> String
 shl (Just $ Signed $ P n) x y = op "blodwen-bits-shl-signed"
                                    [x, y, show (n-1)]
-shl (Just $ Unsigned n)   x y = op "blodwen-bits-shl" [x, y, show n]
+shl (Just $ Unsigned n)   x y = op "blodwen-bits-shl" [x, y, maskFor n]
 shl _                     x y = op "blodwen-shl" [x, y]
 
 
@@ -124,7 +130,7 @@ constPrimitives = MkConstantPrimitives {
         intTo (Signed _) (Unsigned n) x = op "blodwen-toUnsignedInt" [x,show n]
 
         intTo (Unsigned m) (Unsigned n) x =
-          if n >= m then x else op "blodwen-toUnsignedInt" [x,show n]
+          if n >= m then x else op "blodwen-toUnsignedIntMask" [x,maskFor n]
 
 ||| Generate scheme for a primitive function.
 schOp : PrimFn arity -> Vect arity String -> Core String

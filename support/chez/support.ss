@@ -20,10 +20,14 @@
   (lambda (x bits)
     (modulo x (ash 1 bits))))
 
-(define bu+ (lambda (x y bits) (blodwen-toUnsignedInt (+ x y) bits)))
+(define blodwen-toUnsignedIntMask
+  (lambda (x mask)
+    (logand x mask)))
+
+(define bu+ (lambda (x y mask) (blodwen-toUnsignedIntMask (+ x y) mask)))
 (define bu- (lambda (x y bits) (blodwen-toUnsignedInt (- x y) bits)))
-(define bu* (lambda (x y bits) (blodwen-toUnsignedInt (* x y) bits)))
-(define bu/ (lambda (x y bits) (blodwen-toUnsignedInt (quotient x y) bits)))
+(define bu* (lambda (x y mask) (blodwen-toUnsignedIntMask (* x y) mask)))
+(define bu/ (lambda (x y) (quotient x y)))
 
 (define bs+ (lambda (x y bits) (blodwen-toSignedInt (+ x y) bits)))
 (define bs- (lambda (x y bits) (blodwen-toSignedInt (- x y) bits)))
@@ -55,7 +59,7 @@
 
 (define blodwen-bits-shl-signed (lambda (x y bits) (truncate-bits (ash x y) bits)))
 
-(define blodwen-bits-shl (lambda (x y bits) (remainder (ash x y) (ash 1 bits))))
+(define blodwen-bits-shl (lambda (x y mask) (logand (ash x y) mask)))
 
 (define blodwen-shl (lambda (x y) (ash x y)))
 (define blodwen-shr (lambda (x y) (ash x (- y))))
