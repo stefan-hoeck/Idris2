@@ -13,12 +13,10 @@ import System.Clock
 export
 logTerm : {vars : _} ->
           {auto c : Ref Ctxt Defs} ->
-          (s : String) ->
-          {auto 0 _ : KnownTopic s} ->
-          Nat -> Lazy String -> Term vars -> Core ()
-logTerm str n msg tm
+          LogTopic -> Nat -> Lazy String -> Term vars -> Core ()
+logTerm tp n msg tm
     = do opts <- getSession
-         let lvl = mkLogLevel (logEnabled opts) str n
+         let lvl = mkLogLevel (logEnabled opts) tp n
          if keepLog lvl (logEnabled opts) (logLevel opts)
             then do tm' <- toFullNames tm
                     coreLift $ putStrLn $ "LOG " ++ show lvl ++ ": " ++ msg
@@ -37,11 +35,9 @@ log' lvl msg
 ||| high log level numbers for more granular logging.
 export
 log : {auto c : Ref Ctxt Defs} ->
-      (s : String) ->
-      {auto 0 _ : KnownTopic s} ->
-      Nat -> Lazy String -> Core ()
-log str n msg
-    = do let lvl = mkLogLevel (logEnabled !getSession) str n
+      LogTopic -> Nat -> Lazy String -> Core ()
+log tp n msg
+    = do let lvl = mkLogLevel (logEnabled !getSession) tp n
          log' lvl msg
 
 export
@@ -56,12 +52,17 @@ unverifiedLogC str n cmsg
                     coreLift $ putStrLn $ "LOG " ++ show lvl ++ ": " ++ msg
             else pure ()
 
+-- TODO: merge with unverifiedLogC to remove duplication
 export
 logC : {auto c : Ref Ctxt Defs} ->
-       (s : String) ->
-       {auto 0 _ : KnownTopic s} ->
-       Nat -> Core String -> Core ()
-logC str = unverifiedLogC str
+       LogTopic -> Nat -> Core String -> Core ()
+logC tp n cmsg
+    = do opts <- getSession
+         let lvl = mkLogLevel (logEnabled opts) tp n
+         if keepLog lvl (logEnabled opts) (logLevel opts)
+            then do msg <- cmsg
+                    coreLift $ putStrLn $ "LOG " ++ show lvl ++ ": " ++ msg
+            else pure ()
 
 export
 logTimeOver : Integer -> Core String -> Core a -> Core a

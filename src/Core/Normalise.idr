@@ -1173,12 +1173,10 @@ getArity defs env tm = getValArity defs env !(nf defs env tm)
 export
 logNF : {vars : _} ->
         {auto c : Ref Ctxt Defs} ->
-        (s : String) ->
-        {auto 0 _ : KnownTopic s} ->
-        Nat -> Lazy String -> Env Term vars -> NF vars -> Core ()
-logNF str n msg env tmnf
+        LogTopic -> Nat -> Lazy String -> Env Term vars -> NF vars -> Core ()
+logNF tp n msg env tmnf
     = do opts <- getSession
-         let lvl = mkLogLevel (logEnabled opts) str n
+         let lvl = mkLogLevel (logEnabled opts) tp n
          when (keepLog lvl (logEnabled opts) (logLevel opts)) $
             do defs <- get Ctxt
                tm <- quote defs env tmnf
@@ -1204,22 +1202,18 @@ logTermNF' lvl msg env tm
 export
 logTermNF : {vars : _} ->
             {auto c : Ref Ctxt Defs} ->
-            (s : String) ->
-            {auto 0 _ : KnownTopic s} ->
-            Nat -> Lazy String -> Env Term vars -> Term vars -> Core ()
-logTermNF str n msg env tm
-    = do let lvl = mkLogLevel (logEnabled !getSession) str n
+            LogTopic -> Nat -> Lazy String -> Env Term vars -> Term vars -> Core ()
+logTermNF tp n msg env tm
+    = do let lvl = mkLogLevel (logEnabled !getSession) tp n
          logTermNF' lvl msg env tm
 
 export
 logGlue : {vars : _} ->
           {auto c : Ref Ctxt Defs} ->
-          (s : String) ->
-          {auto 0 _ : KnownTopic s} ->
-          Nat -> Lazy String -> Env Term vars -> Glued vars -> Core ()
-logGlue str n msg env gtm
+          LogTopic -> Nat -> Lazy String -> Env Term vars -> Glued vars -> Core ()
+logGlue tp n msg env gtm
     = do opts <- getSession
-         let lvl = mkLogLevel (logEnabled opts) str n
+         let lvl = mkLogLevel (logEnabled opts) tp n
          when (keepLog lvl (logEnabled opts) (logLevel opts)) $
             do defs <- get Ctxt
                tm <- getTerm gtm
@@ -1230,12 +1224,10 @@ logGlue str n msg env gtm
 export
 logGlueNF : {vars : _} ->
             {auto c : Ref Ctxt Defs} ->
-            (s : String) ->
-            {auto 0 _ : KnownTopic s} ->
-            Nat -> Lazy String -> Env Term vars -> Glued vars -> Core ()
-logGlueNF str n msg env gtm
+            LogTopic -> Nat -> Lazy String -> Env Term vars -> Glued vars -> Core ()
+logGlueNF tp n msg env gtm
     = do opts <- getSession
-         let lvl = mkLogLevel (logEnabled opts) str n
+         let lvl = mkLogLevel (logEnabled opts) tp n
          when (keepLog lvl (logEnabled opts) (logLevel opts)) $
             do defs <- get Ctxt
                tm <- getTerm gtm
@@ -1247,10 +1239,8 @@ logGlueNF str n msg env gtm
 export
 logEnv : {vars : _} ->
          {auto c : Ref Ctxt Defs} ->
-         (s : String) ->
-         {auto 0 _ : KnownTopic s} ->
-         Nat -> String -> Env Term vars -> Core ()
-logEnv str n msg env
+         LogTopic -> Nat -> String -> Env Term vars -> Core ()
+logEnv tp n msg env
     = do opts <- getSession
          when (logEnabled opts &&
                    keepLog lvl (logEnabled opts) (logLevel opts)) $ do
@@ -1259,7 +1249,7 @@ logEnv str n msg env
 
   where
     lvl : LogLevel
-    lvl = mkLogLevel True str n
+    lvl = mkLogLevel True tp n
 
     dumpEnv : {vs : List Name} -> Env Term vs -> Core ()
     dumpEnv [] = pure ()

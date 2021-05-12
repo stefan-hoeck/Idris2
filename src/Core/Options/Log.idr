@@ -30,127 +30,230 @@ import Libraries.Text.PrettyPrint.Prettyprinter
 |||
 ||| will deliver basic information about the various phases the compiler goes
 ||| through and deliver a lot of information about scope-checking let binders.
+public export
+data LogTopic =
+      Auto
+    | BuiltinNatural
+    | BuiltinNaturalAddTransform
+    | BuiltinNaturalToInteger
+    | BuiltinNaturalToIntegerAddTransforms
+    | CompileCasetree
+    | CompilerInlineEval
+    | CompilerRefc
+    | CompilerRefcCc
+    | CompilerSchemeChez
+    | Coverage
+    | CoverageEmpty
+    | CoverageMissing
+    | CoverageRecover
+    | DeclareData
+    | DeclareDataConstructor
+    | DeclareDataParameters
+    | DeclareDef
+    | DeclareDefClause
+    | DeclareDefClauseImpossible
+    | DeclareDefClauseWith
+    | DeclareDefImpossible
+    | DeclareDefLhs
+    | DeclareDefLhsImplicits
+    | DeclareParam
+    | DeclareRecord
+    | DeclareRecordField
+    | DeclareRecordProjection
+    | DeclareRecordProjectionPrefix
+    | DeclareType
+    | DesugarIdiom
+    | DocRecord
+    | Elab
+    | ElabAmbiguous
+    | ElabAppLhs
+    | ElabAs
+    | ElabBindnames
+    | ElabBinder
+    | ElabCase
+    | ElabDefLocal
+    | ElabDelay
+    | ElabHole
+    | ElabImplicits
+    | ElabImplementation
+    | ElabInterface
+    | ElabInterfaceDefault
+    | ElabLocal
+    | ElabPrun
+    | ElabPrune
+    | ElabRecord
+    | ElabRetry
+    | ElabRewrite
+    | ElabUnify
+    | ElabUpdate
+    | ElabWith
+    | EvalCasetree
+    | EvalCasetreeStuck
+    | EvalEta
+    | EvalStuck
+    | IdemodeHole
+    | IdemodeHighlight
+    | IdemodeHighlightAlias
+    | IdemodeSend
+    | Import
+    | ImportFile
+    | InteractionCasesplit
+    | InteractionGenerate
+    | InteractionSearch
+    | MetadataNames
+    | Quantity
+    | QuantityHole
+    | QuantityHoleUpdate
+    | ReplEval
+    | Specialise
+    | Totality
+    | TotalityPositivity
+    | TotalityTermination
+    | TotalityTerminationCalc
+    | TotalityTerminationGuarded
+    | TotalityTerminationSizechange
+    | TotalityTerminationSizechangeCheckCall
+    | TotalityTerminationSizechangeCheckCallInPath
+    | TotalityTerminationSizechangeCheckCallInPathNotRestart
+    | TotalityTerminationSizechangeCheckCallInPathNotReturn
+    | TotalityTerminationSizechangeInPath
+    | TotalityTerminationSizechangeIsTerminating
+    | TotalityTerminationSizechangeNeedsChecking
+    | TtcRead
+    | TtcWrite
+    | TypesearchEquiv
+    | UnelabCase
+    | Unify
+    | UnifyApplication
+    | UnifyBinder
+    | UnifyConstant
+    | UnifyConstraint
+    | UnifyDelay
+    | UnifyEqual
+    | UnifyHead
+    | UnifyHole
+    | UnifyInstantiate
+    | UnifyInvertible
+    | UnifyMeta
+    | UnifyNoeta
+    | UnifyPostpone
+    | UnifyRetry
+    | UnifySearch
+    | UnifyUnsolved
+---------------------------------------------------------------------
+
+logTopics : LogTopic -> List String
+logTopics Auto = [ "auto" ]
+logTopics BuiltinNatural = [ "builtin", "Natural" ]
+logTopics BuiltinNaturalAddTransform = [ "builtin", "Natural", "addTransform" ]
+logTopics BuiltinNaturalToInteger = [ "builtin", "NaturalToInteger" ]
+logTopics BuiltinNaturalToIntegerAddTransforms = [ "builtin", "NaturalToInteger", "addTransforms" ]
+logTopics CompileCasetree = [ "compile", "casetree" ]
+logTopics CompilerInlineEval = [ "compiler", "inline", "eval" ]
+logTopics CompilerRefc = [ "compiler", "refc" ]
+logTopics CompilerRefcCc = [ "compiler", "refc", "cc" ]
+logTopics CompilerSchemeChez = [ "compiler", "scheme", "chez" ]
+logTopics Coverage = [ "coverage" ]
+logTopics CoverageEmpty = [ "coverage", "empty" ]
+logTopics CoverageMissing = [ "coverage", "missing" ]
+logTopics CoverageRecover = [ "coverage", "recover" ]
+logTopics DeclareData = [ "declare", "data" ]
+logTopics DeclareDataConstructor = [ "declare", "data", "constructor" ]
+logTopics DeclareDataParameters = [ "declare", "data", "parameters" ]
+logTopics DeclareDef = [ "declare", "def" ]
+logTopics DeclareDefClause = [ "declare", "def", "clause" ]
+logTopics DeclareDefClauseImpossible = [ "declare", "def", "clause", "impossible" ]
+logTopics DeclareDefClauseWith = [ "declare", "def", "clause", "with" ]
+logTopics DeclareDefImpossible = [ "declare", "def", "impossible" ]
+logTopics DeclareDefLhs = [ "declare", "def", "lhs" ]
+logTopics DeclareDefLhsImplicits = [ "declare", "def", "lhs", "implicits" ]
+logTopics DeclareParam = [ "declare", "param" ]
+logTopics DeclareRecord = [ "declare", "record" ]
+logTopics DeclareRecordField = [ "declare", "record", "field" ]
+logTopics DeclareRecordProjection = [ "declare", "record", "projection" ]
+logTopics DeclareRecordProjectionPrefix = [ "declare", "record", "projection", "prefix" ]
+logTopics DeclareType = [ "declare", "type" ]
+logTopics DesugarIdiom = [ "desugar", "idiom" ]
+logTopics DocRecord = [ "doc", "record" ]
+logTopics Elab = [ "elab" ]
+logTopics ElabAmbiguous = [ "elab", "ambiguous" ]
+logTopics ElabAppLhs = [ "elab", "app", "lhs" ]
+logTopics ElabAs = [ "elab", "as" ]
+logTopics ElabBindnames = [ "elab", "bindnames" ]
+logTopics ElabBinder = [ "elab", "binder" ]
+logTopics ElabCase = [ "elab", "case" ]
+logTopics ElabDefLocal = [ "elab", "def", "local" ]
+logTopics ElabDelay = [ "elab", "delay" ]
+logTopics ElabHole = [ "elab", "hole" ]
+logTopics ElabImplicits = [ "elab", "implicits" ]
+logTopics ElabImplementation = [ "elab", "implementation" ]
+logTopics ElabInterface = [ "elab", "interface" ]
+logTopics ElabInterfaceDefault = [ "elab", "interface", "default" ]
+logTopics ElabLocal = [ "elab", "local" ]
+logTopics ElabPrun = [ "elab", "prun" ]
+logTopics ElabPrune = [ "elab", "prune" ]
+logTopics ElabRecord = [ "elab", "record" ]
+logTopics ElabRetry = [ "elab", "retry" ]
+logTopics ElabRewrite = [ "elab", "rewrite" ]
+logTopics ElabUnify = [ "elab", "unify" ]
+logTopics ElabUpdate = [ "elab", "update" ]
+logTopics ElabWith = [ "elab", "with" ]
+logTopics EvalCasetree = [ "eval", "casetree" ]
+logTopics EvalCasetreeStuck = [ "eval", "casetree", "stuck" ]
+logTopics EvalEta = [ "eval", "eta" ]
+logTopics EvalStuck = [ "eval", "stuck" ]
+logTopics IdemodeHole = [ "idemode", "hole" ]
+logTopics IdemodeHighlight = [ "ide-mode", "highlight" ]
+logTopics IdemodeHighlightAlias = [ "ide-mode", "highlight", "alias" ]
+logTopics IdemodeSend = [ "ide-mode", "send" ]
+logTopics Import = [ "import" ]
+logTopics ImportFile = [ "import", "file" ]
+logTopics InteractionCasesplit = [ "interaction", "casesplit" ]
+logTopics InteractionGenerate = [ "interaction", "generate" ]
+logTopics InteractionSearch = [ "interaction", "search" ]
+logTopics MetadataNames = [ "metadata", "names" ]
+logTopics Quantity = [ "quantity" ]
+logTopics QuantityHole = [ "quantity", "hole" ]
+logTopics QuantityHoleUpdate = [ "quantity", "hole", "update" ]
+logTopics ReplEval = [ "repl", "eval" ]
+logTopics Specialise = [ "specialise" ]
+logTopics Totality = [ "totality" ]
+logTopics TotalityPositivity = [ "totality", "positivity" ]
+logTopics TotalityTermination = [ "totality", "termination" ]
+logTopics TotalityTerminationCalc = [ "totality", "termination", "calc" ]
+logTopics TotalityTerminationGuarded = [ "totality", "termination", "guarded" ]
+logTopics TotalityTerminationSizechange = [ "totality", "termination", "sizechange" ]
+logTopics TotalityTerminationSizechangeCheckCall = [ "totality", "termination", "sizechange", "checkCall" ]
+logTopics TotalityTerminationSizechangeCheckCallInPath = [ "totality", "termination", "sizechange", "checkCall", "inPath" ]
+logTopics TotalityTerminationSizechangeCheckCallInPathNotRestart = [ "totality", "termination", "sizechange", "checkCall", "inPathNot", "restart" ]
+logTopics TotalityTerminationSizechangeCheckCallInPathNotReturn = [ "totality", "termination", "sizechange", "checkCall", "inPathNot", "return" ]
+logTopics TotalityTerminationSizechangeInPath = [ "totality", "termination", "sizechange", "inPath" ]
+logTopics TotalityTerminationSizechangeIsTerminating = [ "totality", "termination", "sizechange", "isTerminating" ]
+logTopics TotalityTerminationSizechangeNeedsChecking = [ "totality", "termination", "sizechange", "needsChecking" ]
+logTopics TtcRead = [ "ttc", "read" ]
+logTopics TtcWrite = [ "ttc", "write" ]
+logTopics TypesearchEquiv = [ "typesearch", "equiv" ]
+logTopics UnelabCase = [ "unelab", "case" ]
+logTopics Unify = [ "unify" ]
+logTopics UnifyApplication = [ "unify", "application" ]
+logTopics UnifyBinder = [ "unify", "binder" ]
+logTopics UnifyConstant = [ "unify", "constant" ]
+logTopics UnifyConstraint = [ "unify", "constraint" ]
+logTopics UnifyDelay = [ "unify", "delay" ]
+logTopics UnifyEqual = [ "unify", "equal" ]
+logTopics UnifyHead = [ "unify", "head" ]
+logTopics UnifyHole = [ "unify", "hole" ]
+logTopics UnifyInstantiate = [ "unify", "instantiate" ]
+logTopics UnifyInvertible = [ "unify", "invertible" ]
+logTopics UnifyMeta = [ "unify", "meta" ]
+logTopics UnifyNoeta = [ "unify", "noeta" ]
+logTopics UnifyPostpone = [ "unify", "postpone" ]
+logTopics UnifyRetry = [ "unify", "retry" ]
+logTopics UnifySearch = [ "unify", "search" ]
+logTopics UnifyUnsolved = [ "unify", "unsolved" ]
 
 ----------------------------------------------------------------------------------
 -- INDIVIDUAL LOG LEVEL
-
-public export
-knownTopics : List (String,String)
-knownTopics = [
-    ("", "some documentation of this option"),
-    ("auto", "some documentation of this option"),
-    ("builtin.Natural", "some documentation of this option"),
-    ("builtin.Natural.addTransform", "some documentation of this option"),
-    ("builtin.NaturalToInteger", "some documentation of this option"),
-    ("builtin.NaturalToInteger.addTransforms", "some documentation of this option"),
-    ("compile.casetree", "some documentation of this option"),
-    ("compiler.inline.eval", "some documentation of this option"),
-    ("compiler.refc", "some documentation of this option"),
-    ("compiler.refc.cc", "some documentation of this option"),
-    ("compiler.scheme.chez", "some documentation of this option"),
-    ("coverage", "some documentation of this option"),
-    ("coverage.empty", "some documentation of this option"),
-    ("coverage.missing", "some documentation of this option"),
-    ("coverage.recover", "some documentation of this option"),
-    ("declare.data", "some documentation of this option"),
-    ("declare.data.constructor", "some documentation of this option"),
-    ("declare.data.parameters", "some documentation of this option"),
-    ("declare.def", "some documentation of this option"),
-    ("declare.def.clause", "some documentation of this option"),
-    ("declare.def.clause.impossible", "some documentation of this option"),
-    ("declare.def.clause.with", "some documentation of this option"),
-    ("declare.def.impossible", "some documentation of this option"),
-    ("declare.def.lhs", "some documentation of this option"),
-    ("declare.def.lhs.implicits", "some documentation of this option"),
-    ("declare.param", "some documentation of this option"),
-    ("declare.record", "some documentation of this option"),
-    ("declare.record.field", "some documentation of this option"),
-    ("declare.record.projection", "some documentation of this option"),
-    ("declare.record.projection.prefix", "some documentation of this option"),
-    ("declare.type", "some documentation of this option"),
-    ("desugar.idiom", "some documentation of this option"),
-    ("doc.record", "some documentation of this option"),
-    ("elab", "some documentation of this option"),
-    ("elab.ambiguous", "some documentation of this option"),
-    ("elab.app.lhs", "some documentation of this option"),
-    ("elab.as", "some documentation of this option"),
-    ("elab.bindnames", "some documentation of this option"),
-    ("elab.binder", "some documentation of this option"),
-    ("elab.case", "some documentation of this option"),
-    ("elab.def.local", "some documentation of this option"),
-    ("elab.delay", "some documentation of this option"),
-    ("elab.hole", "some documentation of this option"),
-    ("elab.implicits", "some documentation of this option"),
-    ("elab.implementation", "some documentation of this option"),
-    ("elab.interface", "some documentation of this option"),
-    ("elab.interface.default", "some documentation of this option"),
-    ("elab.local", "some documentation of this option"),
-    ("elab.prun", "some documentation of this option"),
-    ("elab.prune", "some documentation of this option"),
-    ("elab.record", "some documentation of this option"),
-    ("elab.retry", "some documentation of this option"),
-    ("elab.rewrite", "some documentation of this option"),
-    ("elab.unify", "some documentation of this option"),
-    ("elab.update", "some documentation of this option"),
-    ("elab.with", "some documentation of this option"),
-    ("eval.casetree", "some documentation of this option"),
-    ("eval.casetree.stuck", "some documentation of this option"),
-    ("eval.eta", "some documentation of this option"),
-    ("eval.stuck", "some documentation of this option"),
-    ("idemode.hole", "some documentation of this option"),
-    ("ide-mode.highlight", "some documentation of this option"),
-    ("ide-mode.highlight.alias", "some documentation of this option"),
-    ("ide-mode.send", "some documentation of this option"),
-    ("import", "some documentation of this option"),
-    ("import.file", "some documentation of this option"),
-    ("interaction.casesplit", "some documentation of this option"),
-    ("interaction.generate", "some documentation of this option"),
-    ("interaction.search", "some documentation of this option"),
-    ("metadata.names", "some documentation of this option"),
-    ("quantity", "some documentation of this option"),
-    ("quantity.hole", "some documentation of this option"),
-    ("quantity.hole.update", "some documentation of this option"),
-    ("repl.eval", "some documentation of this option"),
-    ("specialise", "some documentation of this option"),
-    ("totality", "some documentation of this option"),
-    ("totality.positivity", "some documentation of this option"),
-    ("totality.termination", "some documentation of this option"),
-    ("totality.termination.calc", "some documentation of this option"),
-    ("totality.termination.guarded", "some documentation of this option"),
-    ("totality.termination.sizechange", "some documentation of this option"),
-    ("totality.termination.sizechange.checkCall", "some documentation of this option"),
-    ("totality.termination.sizechange.checkCall.inPath", "some documentation of this option"),
-    ("totality.termination.sizechange.checkCall.inPathNot.restart", "some documentation of this option"),
-    ("totality.termination.sizechange.checkCall.inPathNot.return", "some documentation of this option"),
-    ("totality.termination.sizechange.inPath", "some documentation of this option"),
-    ("totality.termination.sizechange.isTerminating", "some documentation of this option"),
-    ("totality.termination.sizechange.needsChecking", "some documentation of this option"),
-    ("ttc.read", "some documentation of this option"),
-    ("ttc.write", "some documentation of this option"),
-    ("typesearch.equiv", "some documentation of this option"),
-    ("unelab.case", "some documentation of this option"),
-    ("unify", "some documentation of this option"),
-    ("unify.application", "some documentation of this option"),
-    ("unify.binder", "some documentation of this option"),
-    ("unify.constant", "some documentation of this option"),
-    ("unify.constraint", "some documentation of this option"),
-    ("unify.delay", "some documentation of this option"),
-    ("unify.equal", "some documentation of this option"),
-    ("unify.head", "some documentation of this option"),
-    ("unify.hole", "some documentation of this option"),
-    ("unify.instantiate", "some documentation of this option"),
-    ("unify.invertible", "some documentation of this option"),
-    ("unify.meta", "some documentation of this option"),
-    ("unify.noeta", "some documentation of this option"),
-    ("unify.postpone", "some documentation of this option"),
-    ("unify.retry", "some documentation of this option"),
-    ("unify.search", "some documentation of this option"),
-    ("unify.unsolved", "some documentation of this option")
-]
-
-public export
-KnownTopic : String -> Type
-KnownTopic s = IsJust (lookup s knownTopics)
 
 ||| An individual log level is a pair of a list of non-empty strings and a number.
 ||| We keep the representation opaque to force users to call the smart constructor
@@ -183,8 +286,9 @@ mkUnverifiedLogLevel _ ps = mkLogLevel' (Just (split (== '.') ps))
 ||| Like `mkUnverifiedLogLevel` but with a compile time check that
 ||| the passed string is a known topic.
 export
-mkLogLevel : Bool -> (s : String) -> {auto 0 _ : KnownTopic s} -> Nat -> LogLevel
-mkLogLevel b s = mkUnverifiedLogLevel b s
+mkLogLevel : Bool -> LogTopic -> Nat -> LogLevel
+mkLogLevel False _ = mkLogLevel' Nothing
+mkLogLevel True  t = MkLogLevel (logTopics t)
 
 ||| The unsafe constructor should only be used in places where the topic has already
 ||| been appropriately processed.
