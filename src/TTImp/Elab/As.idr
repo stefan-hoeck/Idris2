@@ -32,7 +32,7 @@ checkAs : {vars : _} ->
 checkAs rig elabinfo nest env fc nameFC side n_in pat topexp
     = do let elabmode = elabMode elabinfo
          let InLHS _ = elabmode
-             | _ => do log "elab.as" 2 $ "Bad @-pattern " ++ show pat
+             | _ => do log ElabAs 2 $ "Bad @-pattern " ++ show pat
                        throw (GenericMsg fc "@-patterns only allowed in pattern clauses")
          est <- get EST
          let n = PV n_in (defining est)
@@ -44,7 +44,7 @@ checkAs rig elabinfo nest env fc nameFC side n_in pat topexp
                     (tm, exp, bty) <- mkPatternHole nameFC rig n env
                                             (implicitMode elabinfo)
                                             topexp
-                    log "elab.as" 5 $ "Added as pattern name " ++ show (n, (rigAs, tm, exp, bty))
+                    log ElabAs 5 $ "Added as pattern name " ++ show (n, (rigAs, tm, exp, bty))
                     defs <- get Ctxt
                     est <- get EST
                     put EST
@@ -55,7 +55,7 @@ checkAs rig elabinfo nest env fc nameFC side n_in pat topexp
                                            (Just patty)
 
                     -- Add the name type to the metadata
-                    log "metadata.names" 7 $ "checkAs is adding ↓"
+                    log MetadataNames 7 $ "checkAs is adding ↓"
                     addNameType nameFC n_in env !(getTerm nty)
 
                     pure (As fc side ntm pattm, patty)

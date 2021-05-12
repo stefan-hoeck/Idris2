@@ -82,7 +82,7 @@ checkTotalityOK n
          -- Once that is done, we build up errors if necessary
          let treq = fromMaybe !getDefaultTotalityOption (findSetTotal (flags gdef))
          let tot = totality gdef
-         log "totality" 3 $ show n ++ " must be: " ++ show treq
+         log Totality 3 $ show n ++ " must be: " ++ show treq
          case treq of
             PartialOK => pure Nothing
             CoveringOnly => checkCovering fc (isCovering tot)

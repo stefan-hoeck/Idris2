@@ -119,7 +119,7 @@ bindNames : {auto c : Ref Ctxt Defs} ->
 bindNames arg tm
     = if !isUnboundImplicits
          then do let ns = nub (findBindableNames arg [] [] tm)
-                 log "elab.bindnames" 10 $ "Found names :" ++ show ns
+                 log ElabBindnames 10 $ "Found names :" ++ show ns
                  pure (map UN (map snd ns), doBind ns tm)
          else pure ([], tm)
 

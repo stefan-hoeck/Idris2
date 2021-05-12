@@ -32,7 +32,7 @@ addAlias : {auto m : Ref MD Metadata} ->
 addAlias from to =
   whenJust (isConcreteFC from) $ \ from =>
     whenJust (isConcreteFC to) $ \ to => do
-      log "ide-mode.highlight.alias" 25 $
+      log IdemodeHighlightAlias 25 $
         "Adding alias: " ++ show from ++ " -> " ++ show to
       addSemanticAlias from to
 
@@ -183,21 +183,21 @@ getNewLHS iploc drop nest wname wargnames lhs_raw patlhs
          (_, mlhs) <- bindNames False mlhs_raw
          setUnboundImplicits autoimp
 
-         log "declare.def.clause.with" 20 $ "Parent LHS (with implicits): " ++ show lhs
-         log "declare.def.clause.with" 20 $ "Modified LHS (with implicits): " ++ show mlhs
+         log DeclareDefClauseWith 20 $ "Parent LHS (with implicits): " ++ show lhs
+         log DeclareDefClauseWith 20 $ "Modified LHS (with implicits): " ++ show mlhs
 
          let (warg :: rest) = reverse wrest
              | _ => throw (GenericMsg iploc "Badly formed 'with' clause")
-         log "declare.def.clause.with" 5 $ show lhs ++ " against " ++ show mlhs ++
+         log DeclareDefClauseWith 5 $ show lhs ++ " against " ++ show mlhs ++
                  " dropping " ++ show (warg :: rest)
          ms <- getMatch True lhs mlhs
-         log "declare.def.clause.with" 5 $ "Matches: " ++ show ms
+         log DeclareDefClauseWith 5 $ "Matches: " ++ show ms
          let params = map (getArgMatch vploc (InLHS top) False warg ms) wargnames
-         log "declare.def.clause.with" 5 $ "Parameters: " ++ show params
+         log DeclareDefClauseWith 5 $ "Parameters: " ++ show params
 
          hdloc <- getHeadLoc patlhs
          let newlhs = apply (IVar hdloc wname) (params ++ rest)
-         log "declare.def.clause.with" 5 $ "New LHS: " ++ show newlhs
+         log DeclareDefClauseWith 5 $ "New LHS: " ++ show newlhs
          pure newlhs
   where
     dropWithArgs : Nat -> RawImp ->
@@ -229,14 +229,14 @@ withRHS fc drop wname wargnames tm toplhs
     updateWith fc tm []
         = throw (GenericMsg fc "Badly formed 'with' application")
     updateWith fc tm (arg :: args)
-        = do log "declare.def.clause.with" 10 $ "With-app: Matching " ++ show toplhs ++ " against " ++ show tm
+        = do log DeclareDefClauseWith 10 $ "With-app: Matching " ++ show toplhs ++ " against " ++ show tm
              ms <- getMatch False toplhs tm
              hdloc <- getHeadLoc tm
-             log "declare.def.clause.with" 10 $ "Result: " ++ show ms
+             log DeclareDefClauseWith 10 $ "Result: " ++ show ms
              let newrhs = apply (IVar hdloc wname)
                                 (map (getArgMatch fc InExpr True arg ms) wargnames)
-             log "declare.def.clause.with" 10 $ "With args for RHS: " ++ show wargnames
-             log "declare.def.clause.with" 10 $ "New RHS: " ++ show newrhs
+             log DeclareDefClauseWith 10 $ "With args for RHS: " ++ show wargnames
+             log DeclareDefClauseWith 10 $ "New RHS: " ++ show newrhs
              pure (withApply fc newrhs args)
 
     mutual

@@ -411,9 +411,9 @@ doEval : {args : _} ->
          Name -> CExp args -> Core (CExp args)
 doEval n exp
     = do l <- newRef LVar (the Int 0)
-         log "compiler.inline.eval" 10 (show n ++ ": " ++ show exp)
+         log CompilerInlineEval 10 (show n ++ ": " ++ show exp)
          exp' <- eval [] [] [] exp
-         log "compiler.inline.eval" 10 ("Inlined: " ++ show exp')
+         log CompilerInlineEval 10 ("Inlined: " ++ show exp')
          pure exp'
 
 inline : {auto c : Ref Ctxt Defs} ->

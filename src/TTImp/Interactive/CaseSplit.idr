@@ -353,8 +353,8 @@ mkCase {c} {u} fn orig lhs_raw
                put UST ust
                lhs' <- unelabNoSugar [] lhs
 
-               log "interaction.casesplit" 3 $ "Original LHS: " ++ show orig
-               log "interaction.casesplit" 3 $ "New LHS: " ++ show lhs'
+               log InteractionCasesplit 3 $ "Original LHS: " ++ show orig
+               log InteractionCasesplit 3 $ "New LHS: " ++ show lhs'
 
                pure (Valid lhs' !(getUpdates defs orig lhs')))
            (\err =>
@@ -390,7 +390,7 @@ getSplitsLHS : {auto m : Ref MD Metadata} ->
                Core (SplitResult (List ClauseUpdate))
 getSplitsLHS fc envlen lhs_in n
     = do let lhs = substLets lhs_in
-         logTerm "interaction.casesplit" 3 "Splitting" lhs_in
+         logTerm InteractionCasesplit 3 "Splitting" lhs_in
          let usedns = findAllVars lhs_in
 
          defs <- get Ctxt

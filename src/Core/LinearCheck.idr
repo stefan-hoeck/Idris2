@@ -103,7 +103,7 @@ mutual
   updateHoleUsagePats {vars} useInHole var args (vs ** (env, lhs, rhs))
       = do -- Find the argument which corresponds to var
            let argpos = findArg Z args
-           log "quantity.hole" 10 $ "At positions " ++ show argpos
+           log QuantityHole 10 $ "At positions " ++ show argpos
            -- Find what it's position is in env by looking at the lhs args
            let vars = mapMaybe (findLocal (getArgs lhs)) argpos
            hs <- traverse (\vsel => updateHoleUsage useInHole vsel [] rhs)
@@ -147,9 +147,9 @@ mutual
                    do let ty = type gdef
                       ty' <- updateHoleType useInHole var zs ty args
                       updateTy i ty'
-                      logTerm "quantity.hole.update" 5 ("New type of " ++
+                      logTerm QuantityHoleUpdate 5 ("New type of " ++
                                  show (fullname gdef)) ty'
-                      logTerm "quantity.hole.update" 5 ("Updated from " ++
+                      logTerm QuantityHoleUpdate 5 ("Updated from " ++
                                  show (fullname gdef)) (type gdef)
                       pure True
                 _ => updateHoleUsageArgs useInHole var zs args
@@ -223,7 +223,7 @@ mutual
                                 (PMDef _ _ _ _ _) => True
                                 _ => False)
                           rig
-           logC "quantity" 10 $ do
+           logC Quantity 10 $ do
              def <- the (Core String) $ case definition gdef of
                          PMDef _ _ (STerm _ tm) _ _ =>
                               do tm' <- toFullNames tm
@@ -536,15 +536,15 @@ mutual
       getPUsage : ClosedTerm -> (vs ** (Env Term vs, Term vs, Term vs)) ->
                   Core (List (Name, ArgUsage))
       getPUsage ty (_ ** (penv, lhs, rhs))
-          = do logEnv "quantity" 10 "Env" penv
-               logTerm "quantity" 10 "LHS" lhs
-               logTerm "quantity" 5 "Linear check in case RHS" rhs
+          = do logEnv Quantity 10 "Env" penv
+               logTerm Quantity 10 "LHS" lhs
+               logTerm Quantity 5 "Linear check in case RHS" rhs
                (rhs', _, used) <- lcheck rig False penv rhs
-               log "quantity" 10 $ "Used: " ++ show used
+               log Quantity 10 $ "Used: " ++ show used
                let args = getArgs lhs
                checkEnvUsage {done = []} rig penv used args rhs'
                ause <- getCaseUsage ty penv args used rhs
-               log "quantity" 10 $ "Arg usage: " ++ show ause
+               log Quantity 10 $ "Arg usage: " ++ show ause
                pure ause
 
       combineUsage : (Name, ArgUsage) -> (Name, ArgUsage) ->
@@ -600,13 +600,13 @@ mutual
                         PMDef _ _ _ _ pats =>
                             do u <- getArgUsage (getLoc (type def))
                                                 rig (type def) pats
-                               log "quantity" 5 $ "Overall arg usage " ++ show u
+                               log Quantity 5 $ "Overall arg usage " ++ show u
                                let ty' = updateUsage u (type def)
                                updateTy idx ty'
                                setLinearCheck idx True
-                               logTerm "quantity" 5 ("New type of " ++
+                               logTerm Quantity 5 ("New type of " ++
                                           show (fullname def)) ty'
-                               logTerm "quantity" 5 ("Updated from " ++
+                               logTerm Quantity 5 ("Updated from " ++
                                           show (fullname def)) (type def)
                                pure ty'
                         _ => pure (type def)
@@ -719,9 +719,9 @@ linearCheck : {vars : _} ->
               Env Term vars -> Term vars ->
               Core (Term vars)
 linearCheck fc rig erase env tm
-    = do logTerm "quantity" 5 "Linearity check on " tm
-         logEnv "quantity" 5 "In env" env
+    = do logTerm Quantity 5 "Linearity check on " tm
+         logEnv Quantity 5 "In env" env
          (tm', _, used) <- lcheck rig erase env tm
-         log "quantity" 5 $ "Used: " ++ show used
+         log Quantity 5 $ "Used: " ++ show used
          when (not erase) $ checkEnvUsage {done = []} fc rig env used tm'
          pure tm'

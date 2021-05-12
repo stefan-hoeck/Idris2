@@ -107,9 +107,9 @@ inferLambda rig elabinfo nest env fc rigl info n argTy scope expTy
                                 check {e=e'} rig elabinfo
                                       nest' env' scope Nothing)
          let lamty = gnf env (Bind fc n (Pi fc rigb info' tyv) !(getTerm scopet))
-         logGlue "elab.binder" 5 "Inferred lambda type" env lamty
+         logGlue ElabBinder 5 "Inferred lambda type" env lamty
          maybe (pure ())
-               (logGlueNF "elab.binder" 5 "Expected lambda type" env) expTy
+               (logGlueNF ElabBinder 5 "Expected lambda type" env) expTy
          checkExp rig elabinfo env fc
                   (Bind fc n (Lam fc rigb info' tyv) scopev)
                   lamty expTy
@@ -162,13 +162,13 @@ checkLambda rig_in elabinfo nest env fc rigl info n argTy scope (Just expty_in)
                        inScope fc env' (\e' =>
                           check {e=e'} rig elabinfo nest' env' scope
                                 (Just (gnf env' (renameTop n psc))))
-                    logTermNF "elab.binder" 10 "Lambda type" env exptynf
-                    logGlueNF "elab.binder" 10 "Got scope type" env' scopet
+                    logTermNF ElabBinder 10 "Lambda type" env exptynf
+                    logGlueNF ElabBinder 10 "Got scope type" env' scopet
 
                     -- Currently, the fc a PLam holds (and that ILam gets as a consequence)
                     -- is the file context of the argument to the lambda. This fits nicely
                     -- in this exact use, but is likely a bug.
-                    log "metadata.names" 7 "checkLambda is adding ↓"
+                    log MetadataNames 7 "checkLambda is adding ↓"
                     addNameType fc n env pty -- Add the type of the argument to the metadata
 
                     checkExp rig elabinfo env fc
@@ -240,7 +240,7 @@ checkLet rigc_in elabinfo nest env fc lhsFC rigl n nTy nVal scope expty {vars}
          -- build the term directly
 
          -- Add the lhs of the let to metadata
-         log "metadata.names" 7 $ "checkLet is adding ↓"
+         log MetadataNames 7 $ "checkLet is adding ↓"
          addNameType lhsFC n env tyv
 
          pure (Bind fc n (Let fc rigb valv tyv) scopev,

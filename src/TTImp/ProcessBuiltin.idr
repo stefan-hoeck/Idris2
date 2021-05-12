@@ -188,7 +188,7 @@ addBuiltinNat :
     Ref Ctxt Defs =>
     (ty : Name) -> NatBuiltin -> Core ()
 addBuiltinNat type cons = do
-    log "builtin.Natural.addTransform" 10
+    log BuiltinNaturalAddTransform 10
         $ "Add %builtin Natural transform for " ++ show type ++ "."
     update Ctxt $ record
         { builtinTransforms.natTyNames $= insert type cons
@@ -202,7 +202,7 @@ addNatToInteger :
     NatToInt ->
     Core ()
 addNatToInteger fn nToI = do
-    log "builtin.NaturalToInteger.addTransforms" 10
+    log BuiltinNaturalToIntegerAddTransforms 10
         $ "Add %builtin NaturalToInteger transform for " ++ show fn ++ "."
     update Ctxt $ record
         { builtinTransforms.natToIntegerFns $= insert fn nToI
@@ -213,7 +213,7 @@ processBuiltinNatural :
     Ref Ctxt Defs =>
     Defs -> FC -> Name -> Core ()
 processBuiltinNatural ds fc name = do
-    log "builtin.Natural" 5 $ "Processing %builtin Natural " ++ show name ++ "."
+    log BuiltinNatural 5 $ "Processing %builtin Natural " ++ show name ++ "."
     [(n, _, gdef)] <- lookupCtxtName name ds.gamma
         | [] => undefinedName fc name
         | ns => throw $ AmbiguousName fc $ (\(n, _, _) => n) <$> ns
@@ -231,7 +231,7 @@ processNatToInteger :
     Ref Ctxt Defs =>
     Defs -> FC -> Name -> Core ()
 processNatToInteger ds fc fn = do
-    log "builtin.NaturalToInteger" 5 $ "Processing %builtin NaturalToInteger " ++ show fn ++ "."
+    log BuiltinNaturalToInteger 5 $ "Processing %builtin NaturalToInteger " ++ show fn ++ "."
     [(n, _, gdef)] <- lookupCtxtName fn ds.gamma
         | [] => undefinedName fc fn
         | ns => throw $ AmbiguousName fc $ (\(n, _, _) => n) <$> ns

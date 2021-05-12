@@ -35,14 +35,14 @@ expandAmbigName (InLHS _) nest env orig args (IBindVar fc n) exp
             else pure $ orig
 expandAmbigName mode nest env orig args (IVar fc x) exp
    = case lookup x (names nest) of
-          Just _ => do log "elab.ambiguous" 10 $ "Nested " ++ show x
+          Just _ => do log ElabAmbiguous 10 $ "Nested " ++ show x
                        pure orig
           Nothing => do
              defs <- get Ctxt
              case defined x env of
                   Just _ =>
                     if isNil args || notLHS mode
-                       then do log "elab.ambiguous" 10 $ "Defined in env " ++ show x
+                       then do log ElabAmbiguous 10 $ "Defined in env " ++ show x
                                pure $ orig
                        else pure $ IMustUnify fc VarApplied orig
                   Nothing =>
@@ -52,16 +52,16 @@ expandAmbigName mode nest env orig args (IVar fc x) exp
                         let primApp = isPrimName prims x
                         case lookupUN (userNameRoot x) (unambiguousNames est) of
                           Just xr => do
-                            log "elab.ambiguous" 10 $ "unambiguous: " ++ show (fst xr)
+                            log ElabAmbiguous 10 $ "unambiguous: " ++ show (fst xr)
                             pure $ mkAlt primApp est xr
                           Nothing => do
                             ns <- lookupCtxtName x (gamma defs)
                             ns' <- filterM visible ns
                             case ns' of
-                               [] => do log "elab.ambiguous" 10 $ "Failed to find " ++ show orig
+                               [] => do log ElabAmbiguous 10 $ "Failed to find " ++ show orig
                                         pure orig
                                [nalt] =>
-                                     do log "elab.ambiguous" 10 $ "Only one " ++ show (fst nalt)
+                                     do log ElabAmbiguous 10 $ "Only one " ++ show (fst nalt)
                                         pure $ mkAlt primApp est nalt
                                nalts => pure $ IAlternative fc
                                                       (uniqType primNs x args)
@@ -154,7 +154,7 @@ expandAmbigName mode nest env orig args (IAutoApp fc f a) exp
     = expandAmbigName mode nest env orig
                       ((fc, Just Nothing, a) :: args) f exp
 expandAmbigName elabmode nest env orig args tm exp
-    = do log "elab.ambiguous" 10 $ "No ambiguity " ++ show orig
+    = do log ElabAmbiguous 10 $ "No ambiguity " ++ show orig
          pure orig
 
 stripDelay : NF vars -> NF vars
@@ -295,13 +295,13 @@ pruneByType env target alts
     = do defs <- get Ctxt
          matches_in <- traverse (couldBe defs (stripDelay target)) alts
          let matches = mapMaybe id matches_in
-         logNF "elab.prune" 10 "Prune by" env target
-         log "elab.prun" 10 (show matches)
+         logNF ElabPrune 10 "Prune by" env target
+         log ElabPrun 10 (show matches)
          res <- if anyTrue (map fst matches)
                 -- if there's any concrete matches, drop the non-concrete
                 -- matches marked as '%allow_overloads' from the possible set
                    then do keep <- filterCore (notOverloadable defs) matches
-                           log "elab.prune" 10 $ "Keep " ++ show keep
+                           log ElabPrune 10 $ "Keep " ++ show keep
                            pure (map snd keep)
                    else pure (map snd matches)
          if isNil res
@@ -363,11 +363,11 @@ checkAlternative rig elabinfo nest env fc (UniqueDefault def) alts mexpected
                                 then gnf env exp
                                 else expected
 
-                  logGlueNF "elab.ambiguous" 5 ("Ambiguous elaboration " ++ show alts ++
+                  logGlueNF ElabAmbiguous 5 ("Ambiguous elaboration " ++ show alts ++
                                " at " ++ show fc ++
                                "\nWith default. Target type ") env exp'
                   alts' <- pruneByType env !(getNF exp') alts
-                  log "elab.prun" 5 ("Pruned alts (" ++ show (length alts') ++ ") " ++
+                  log ElabPrun 5 ("Pruned alts (" ++ show (length alts') ++ ") " ++
                           show alts')
 
                   if delayed -- use the default if there's still ambiguity
@@ -378,7 +378,7 @@ checkAlternative rig elabinfo nest env fc (UniqueDefault def) alts mexpected
                                     checkImp rig (addAmbig alts' (getName t) elabinfo)
                                              nest env t
                                              (Just exp'))) alts'))
-                            (do log "elab" 5 "All failed, running default"
+                            (do log Elab 5 "All failed, running default"
                                 checkImp rig (addAmbig alts' (getName def) elabinfo)
                                              nest env def (Just exp'))
                      else exactlyOne' True fc env
@@ -414,7 +414,7 @@ checkAlternative rig elabinfo nest env fc uniq alts mexpected
 
                           alts' <- pruneByType env !(getNF exp') alts
 
-                          logGlueNF "elab.ambiguous" 5 ("Ambiguous elaboration " ++ show delayed ++ " " ++
+                          logGlueNF ElabAmbiguous 5 ("Ambiguous elaboration " ++ show delayed ++ " " ++
                                        show alts' ++
                                        " at " ++ show fc ++
                                        "\nTarget type ") env exp'
@@ -431,5 +431,5 @@ checkAlternative rig elabinfo nest env fc uniq alts mexpected
                                   -- way that allows one pass)
                                   solveConstraints solvemode Normal
                                   solveConstraints solvemode Normal
-                                  log "elab" 10 $ show (getName t) ++ " success"
+                                  log Elab 10 $ show (getName t) ++ " success"
                                   pure res)) alts')

@@ -77,10 +77,10 @@ delayOnFailure fc rig env expected pred pri elab
                     then
                       do nm <- genName "delayed"
                          (ci, dtm) <- newDelayed fc linear env nm !(getTerm expected)
-                         logGlueNF "elab.delay" 5 ("Postponing elaborator " ++ show nm ++
+                         logGlueNF ElabDelay 5 ("Postponing elaborator " ++ show nm ++
                                       " at " ++ show fc ++
                                       " for") env expected
-                         log "elab.delay" 10 ("Due to error " ++ show err)
+                         log ElabDelay 10 ("Due to error " ++ show err)
                          ust <- get UST
                          defs <- get Ctxt
                          put UST (record { delayedElab $=
@@ -106,7 +106,7 @@ delayElab {vars} fc rig env exp pri elab
          nm <- genName "delayed"
          expected <- mkExpected exp
          (ci, dtm) <- newDelayed fc linear env nm !(getTerm expected)
-         logGlueNF "elab.delay" 5 ("Postponing elaborator " ++ show nm ++
+         logGlueNF ElabDelay 5 ("Postponing elaborator " ++ show nm ++
                       " for") env expected
          ust <- get UST
          defs <- get Ctxt
@@ -222,7 +222,7 @@ retryDelayed' errmode acc (d@(_, i, hints, elab) :: ds)
               | _ => retryDelayed' errmode acc ds
          handle
            (do est <- get EST
-               log "elab.retry" 5 (show (delayDepth est) ++ ": Retrying delayed hole " ++ show !(getFullName (Resolved i)))
+               log ElabRetry 5 (show (delayDepth est) ++ ": Retrying delayed hole " ++ show !(getFullName (Resolved i)))
                -- elab itself might have delays internally, so keep track of them
                ust <- get UST
                put UST (record { delayedElab = [] } ust)
@@ -235,11 +235,11 @@ retryDelayed' errmode acc (d@(_, i, hints, elab) :: ds)
 
                updateDef (Resolved i) (const (Just
                     (PMDef (MkPMDefInfo NotHole True) [] (STerm 0 tm) (STerm 0 tm) [])))
-               logTerm "elab.update" 5 ("Resolved delayed hole " ++ show i) tm
-               logTermNF "elab.update" 5 ("Resolved delayed hole NF " ++ show i) [] tm
+               logTerm ElabUpdate 5 ("Resolved delayed hole " ++ show i) tm
+               logTermNF ElabUpdate 5 ("Resolved delayed hole NF " ++ show i) [] tm
                removeHole i
                retryDelayed' errmode acc ds')
-           (\err => do log "elab" 5 $ show errmode ++ ":Error in " ++ show !(getFullName (Resolved i))
+           (\err => do log Elab 5 $ show errmode ++ ":Error in " ++ show !(getFullName (Resolved i))
                                 ++ "\n" ++ show err
                        case errmode of
                          RecoverableErrors =>
@@ -275,7 +275,7 @@ runDelays pri elab
          put UST (record { delayedElab = [] } ust)
          tm <- elab
          ust <- get UST
-         log "elab.delay" 2 $ "Rerunning delayed in elaborator"
+         log ElabDelay 2 $ "Rerunning delayed in elaborator"
          handle (do ignore $ retryDelayed' AllErrors []
                        (reverse (filter hasPri (delayedElab ust))))
                 (\err => do put UST (record { delayedElab = olddelayed } ust)

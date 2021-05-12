@@ -141,7 +141,7 @@ isEmpty : {vars : _} ->
 isEmpty defs env (NTCon fc n t a args)
   = do Just nty <- lookupDefExact n (gamma defs)
          | _ => pure False
-       log "coverage.empty" 10 $ "Checking type: " ++ show nty
+       log CoverageEmpty 10 $ "Checking type: " ++ show nty
        case nty of
             TCon _ _ _ _ flags _ cons _
                  => if not (external flags)
@@ -214,21 +214,21 @@ getMissingAlts fc defs (NPrimVal _ WorldType) alts
          then pure [DefaultCase (Unmatched "Coverage check")]
          else pure []
 getMissingAlts fc defs (NPrimVal _ c) alts
-  = do log "coverage.missing" 50 $ "Looking for missing alts at type " ++ show c
+  = do log CoverageMissing 50 $ "Looking for missing alts at type " ++ show c
        if any isDefault alts
-         then do log "coverage.missing" 20 "Found default"
+         then do log CoverageMissing 20 "Found default"
                  pure []
          else pure [DefaultCase (Unmatched "Coverage check")]
 -- Similarly for types
 getMissingAlts fc defs (NType _) alts
-    = do log "coverage.missing" 50 "Looking for missing alts at type Type"
+    = do log CoverageMissing 50 "Looking for missing alts at type Type"
          if any isDefault alts
-           then do log "coverage.missing" 20 "Found default"
+           then do log CoverageMissing 20 "Found default"
                    pure []
            else pure [DefaultCase (Unmatched "Coverage check")]
 getMissingAlts fc defs nfty alts
-    = do log "coverage.missing" 50 $ "Getting constructors for: " ++ show nfty
-         logNF "coverage.missing" 20 "Getting constructors for" (mkEnv fc _) nfty
+    = do log CoverageMissing 50 $ "Getting constructors for: " ++ show nfty
+         logNF CoverageMissing 20 "Getting constructors for" (mkEnv fc _) nfty
          allCons <- getCons defs nfty
          pure (filter (noneOf alts)
                  (map (mkAlt fc (Unmatched "Coverage check") . snd) allCons))
@@ -397,7 +397,7 @@ getMissing fc n ctree
         patss <- buildArgs fc defs [] [] psIn ctree
         let pats = concat patss
         unless (null pats) $
-          logC "coverage.missing" 20 $ map unlines $
+          logC CoverageMissing 20 $ map unlines $
             flip traverse pats $ \ pat =>
               show <$> toFullNames pat
         pure (map (apply fc (Ref fc Func n)) patss)
@@ -508,11 +508,11 @@ export
 checkMatched : {auto c : Ref Ctxt Defs} ->
                List Clause -> ClosedTerm -> Core (Maybe ClosedTerm)
 checkMatched cs ulhs
-    = do logTerm "coverage" 5 "Checking coverage for" ulhs
-         logC "coverage" 10 $ pure $ "(raw term: " ++ show !(toFullNames ulhs) ++ ")"
+    = do logTerm Coverage 5 "Checking coverage for" ulhs
+         logC Coverage 10 $ pure $ "(raw term: " ++ show !(toFullNames ulhs) ++ ")"
          ulhs <- eraseApps ulhs
-         logTerm "coverage" 5 "Erased to" ulhs
-         logC "coverage" 5 $ do
+         logTerm Coverage 5 "Erased to" ulhs
+         logC Coverage 5 $ do
             cs <- traverse toFullNames cs
             pure $ "Against clauses:\n" ++
                    (show $ indent {ann = ()} 2 $ vcat $ map (pretty . show) cs)
@@ -520,11 +520,11 @@ checkMatched cs ulhs
   where
     tryClauses : List Clause -> ClosedTerm -> Core (Maybe ClosedTerm)
     tryClauses [] ulhs
-        = do logTermNF "coverage" 10 "Nothing matches" [] ulhs
+        = do logTermNF Coverage 10 "Nothing matches" [] ulhs
              pure $ Just ulhs
     tryClauses (MkClause env lhs _ :: cs) ulhs
         = if !(clauseMatches env lhs ulhs)
-             then do logTermNF "coverage" 10 "Yes" env lhs
+             then do logTermNF Coverage 10 "Yes" env lhs
                      pure Nothing -- something matches, discared it
-             else do logTermNF "coverage" 10 "No match" env lhs
+             else do logTermNF Coverage 10 "No match" env lhs
                      tryClauses cs ulhs

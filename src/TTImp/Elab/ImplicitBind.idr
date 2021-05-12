@@ -47,7 +47,7 @@ mkOuterHole loc rig n topenv Nothing
          let env = outerEnv est
          nm <- genName ("type_of_" ++ nameRoot n)
          ty <- metaVar loc erased env nm (TType loc)
-         log "elab.implicits" 10 $ "Made metavariable for type of " ++ show n ++ ": " ++ show nm
+         log ElabImplicits 10 $ "Made metavariable for type of " ++ show n ++ ": " ++ show nm
          put EST (addBindIfUnsolved nm rig Explicit topenv (embedSub sub ty) (TType loc) est)
          tm <- implBindVar loc rig env n ty
          pure (embedSub sub tm, embedSub sub ty)
@@ -114,7 +114,7 @@ bindUnsolved {vars} fc elabmode _
     = do est <- get EST
          defs <- get Ctxt
          let bifs = bindIfUnsolved est
-         log "elab.implicits" 5 $ "Bindable unsolved implicits: " ++ show (map fst bifs)
+         log ElabImplicits 5 $ "Bindable unsolved implicits: " ++ show (map fst bifs)
          traverse_ (mkImplicit defs (outerEnv est) (subEnv est)) (bindIfUnsolved est)
   where
     makeBoundVar : {outer, vs : _} ->
@@ -146,7 +146,7 @@ bindUnsolved {vars} fc elabmode _
              bindtm <- makeBoundVar n rig p outerEnv
                                     sub subEnv
                                     !(normaliseHoles defs env exp)
-             logTerm "elab.implicits" 5 ("Added unbound implicit") bindtm
+             logTerm ElabImplicits 5 ("Added unbound implicit") bindtm
              ignore $ unify (case elabmode of
                          InLHS _ => inLHS
                          _ => inTerm)
@@ -331,8 +331,8 @@ getToBind {vars} fc elabmode impmode env excepts
          let hnames = map fst res
          -- Return then in dependency order
          let res' = depSort hnames res
-         log "elab.implicits" 10 $ "Bound names: " ++ show res
-         log "elab.implicits" 10 $ "Sorted: " ++ show res'
+         log ElabImplicits 10 $ "Bound names: " ++ show res
+         log ElabImplicits 10 $ "Sorted: " ++ show res'
          pure res'
   where
     normBindingTy : Defs -> ImplBinding vars -> Core (ImplBinding vars)
@@ -346,7 +346,7 @@ getToBind {vars} fc elabmode impmode env excepts
                Core (List (Name, ImplBinding vars))
     normImps defs ns [] = pure []
     normImps defs ns ((PV n i, bty) :: ts)
-        = do logTermNF "elab.implicits" 10 ("Implicit pattern var " ++ show (PV n i)) env
+        = do logTermNF ElabImplicits 10 ("Implicit pattern var " ++ show (PV n i)) env
                        (bindingType bty)
              if PV n i `elem` ns
                 then normImps defs ns ts
@@ -354,7 +354,7 @@ getToBind {vars} fc elabmode impmode env excepts
                         pure ((PV n i, !(normBindingTy defs bty)) :: rest)
     normImps defs ns ((n, bty) :: ts)
         = do tmnf <- normaliseHoles defs env (bindingTerm bty)
-             logTerm "elab.implicits" 10 ("Normalising implicit " ++ show n) tmnf
+             logTerm ElabImplicits 10 ("Normalising implicit " ++ show n) tmnf
              case getFnArgs tmnf of
                 -- n reduces to another hole, n', so treat it as that as long
                 -- as it isn't already done
@@ -418,7 +418,7 @@ checkBindVar rig elabinfo nest env fc str topexp
          est <- get EST
 
          whenJust (isConcreteFC fc) \nfc => do
-           log "ide-mode.highlight" 7 $ "getNameType is adding Bound: " ++ show n
+           log IdemodeHighlight 7 $ "getNameType is adding Bound: " ++ show n
            addSemanticDecorations [(nfc, Bound, Just n)]
 
 
@@ -431,12 +431,12 @@ checkBindVar rig elabinfo nest env fc str topexp
                    case implicitMode elabinfo of
                         PI _ => setInvertible fc n
                         _ => pure ()
-                   log "elab.implicits" 5 $ "Added Bound implicit " ++ show (n, (rig, tm, exp, bty))
+                   log ElabImplicits 5 $ "Added Bound implicit " ++ show (n, (rig, tm, exp, bty))
                    est <- get EST
                    put EST (record { boundNames $= ((n, NameBinding rig Explicit tm exp) ::),
                                      toBind $= ((n, NameBinding rig Explicit tm bty) :: ) } est)
 
-                   log "metadata.names" 7 $ "checkBindVar is adding ↓"
+                   log MetadataNames 7 $ "checkBindVar is adding ↓"
                    addNameType fc (UN str) env exp
                    addNameLoc fc (UN str)
 
@@ -448,7 +448,7 @@ checkBindVar rig elabinfo nest env fc str topexp
                    let tm = bindingTerm bty
                    let ty = bindingType bty
 
-                   log "metadata.names" 7 $ "checkBindVar is adding ↓"
+                   log MetadataNames 7 $ "checkBindVar is adding ↓"
                    addNameType fc (UN str) env ty
                    addNameLoc fc (UN str)
 
@@ -514,8 +514,8 @@ checkBindHere rig elabinfo nest env fc bindmode tm exp
          checkDots -- Check dot patterns unifying with the claimed thing
                    -- before binding names
 
-         logTerm "elab.implicits" 5 "Binding names" tmv
-         logTermNF "elab.implicits" 5 "Normalised" env tmv
+         logTerm ElabImplicits 5 "Binding names" tmv
+         logTermNF ElabImplicits 5 "Normalised" env tmv
          argImps <- getToBind fc (elabMode elabinfo)
                               bindmode env dontbind
          clearToBind dontbind

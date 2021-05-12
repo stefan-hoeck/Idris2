@@ -162,7 +162,7 @@ recoverableErr : {auto c : Ref Ctxt Defs} ->
 recoverableErr defs (CantConvert fc env l r)
   = do l <- nf defs env l
        r <- nf defs env r
-       log "coverage.recover" 10 $ unlines
+       log CoverageRecover 10 $ unlines
          [ "Recovering from CantConvert?"
          , "Checking:"
          , "  " ++ show l
@@ -323,27 +323,27 @@ checkLHS : {vars : _} ->
                            Term vars', Term vars')))
 checkLHS {vars} trans mult hashit n opts nest env fc lhs_in
     = do defs <- get Ctxt
-         logRaw "declare.def.lhs" 30 "Raw LHS: " lhs_in
+         logRaw DeclareDefLhs 30 "Raw LHS: " lhs_in
          lhs_raw <- if trans
                        then pure lhs_in
                        else lhsInCurrentNS nest lhs_in
-         logRaw "declare.def.lhs" 30 "Raw LHS in current NS: " lhs_raw
+         logRaw DeclareDefLhs 30 "Raw LHS in current NS: " lhs_raw
 
          autoimp <- isUnboundImplicits
          setUnboundImplicits True
          (_, lhs_bound) <- bindNames False lhs_raw
          setUnboundImplicits autoimp
-         logRaw "declare.def.lhs" 30 "Raw LHS with implicits bound" lhs_bound
+         logRaw DeclareDefLhs 30 "Raw LHS with implicits bound" lhs_bound
 
          lhs <- if trans
                    then pure lhs_bound
                    else implicitsAs n defs vars lhs_bound
 
-         logC "declare.def.lhs" 5 $ do pure $ "Checking LHS of " ++ show !(getFullName (Resolved n))
+         logC DeclareDefLhs 5 $ do pure $ "Checking LHS of " ++ show !(getFullName (Resolved n))
 -- todo: add Pretty RawImp instance
---         logC "declare.def.lhs" 5 $ do pure $ show $ indent {ann = ()} 2 $ pretty lhs
-         log "declare.def.lhs" 10 $ show lhs
-         logEnv "declare.def.lhs" 5 "In env" env
+--         logC DeclareDefLhs 5 $ do pure $ show $ indent {ann = ()} 2 $ pretty lhs
+         log DeclareDefLhs 10 $ show lhs
+         logEnv DeclareDefLhs 5 "In env" env
          let lhsMode = if trans
                           then InTransform
                           else InLHS mult
@@ -351,7 +351,7 @@ checkLHS {vars} trans mult hashit n opts nest env fc lhs_in
              wrapErrorC opts (InLHS fc !(getFullName (Resolved n))) $
                      elabTerm n lhsMode opts nest env
                                 (IBindHere fc PATTERN lhs) Nothing
-         logTerm "declare.def.lhs" 5 "Checked LHS term" lhstm
+         logTerm DeclareDefLhs 5 "Checked LHS term" lhstm
          lhsty <- getTerm lhstyg
 
          defs <- get Ctxt
@@ -363,16 +363,16 @@ checkLHS {vars} trans mult hashit n opts nest env fc lhs_in
          lhstm <- normaliseHoles defs lhsenv lhstm
          lhsty <- normaliseHoles defs env lhsty
          linvars_in <- findLinear True 0 linear lhstm
-         logTerm "declare.def.lhs" 10 "Checked LHS term after normalise" lhstm
-         log "declare.def.lhs" 5 $ "Linearity of names in " ++ show n ++ ": " ++
+         logTerm DeclareDefLhs 10 "Checked LHS term after normalise" lhstm
+         log DeclareDefLhs 5 $ "Linearity of names in " ++ show n ++ ": " ++
                  show linvars_in
 
          linvars <- combineLinear fc linvars_in
          let lhstm_lin = setLinear linvars lhstm
          let lhsty_lin = setLinear linvars lhsty
 
-         logTerm "declare.def.lhs" 3 "LHS term" lhstm_lin
-         logTerm "declare.def.lhs" 5 "LHS type" lhsty_lin
+         logTerm DeclareDefLhs 3 "LHS term" lhstm_lin
+         logTerm DeclareDefLhs 5 "LHS type" lhsty_lin
          setHoleLHS (bindEnv fc env lhstm_lin)
 
          ext <- extendEnv env SubRefl nest lhstm_lin lhsty_lin
@@ -421,8 +421,8 @@ checkClause mult vis totreq hashit n opts nest env (ImpossibleClause fc lhs)
                (_, lhs) <- bindNames False lhs_raw
                setUnboundImplicits autoimp
 
-               log "declare.def.clause.impossible" 5 $ "Checking " ++ show lhs
-               logEnv "declare.def.clause.impossible" 5 "In env" env
+               log DeclareDefClauseImpossible 5 $ "Checking " ++ show lhs
+               logEnv DeclareDefClauseImpossible 5 "In env" env
                (lhstm, lhstyg) <-
                            elabTerm n (InLHS mult) opts nest env
                                       (IBindHere fc PATTERN lhs) Nothing
@@ -442,14 +442,14 @@ checkClause {vars} mult vis totreq hashit n opts nest env (PatClause fc lhs_in r
     = do (_, (vars'  ** (sub', env', nest', lhstm', lhsty'))) <-
              checkLHS False mult hashit n opts nest env fc lhs_in
          let rhsMode = if isErased mult then InType else InExpr
-         log "declare.def.clause" 5 $ "Checking RHS " ++ show rhs
-         logEnv "declare.def.clause" 5 "In env" env'
+         log DeclareDefClause 5 $ "Checking RHS " ++ show rhs
+         logEnv DeclareDefClause 5 "In env" env'
 
          rhstm <- wrapErrorC opts (InRHS fc !(getFullName (Resolved n))) $
                        checkTermSub n rhsMode opts nest' env' env sub' rhs (gnf env' lhsty')
          clearHoleLHS
 
-         logTerm "declare.def.clause" 3 "RHS term" rhstm
+         logTerm DeclareDefClause 3 "RHS term" rhstm
          when hashit $
            do addHashWithNames lhstm'
               addHashWithNames rhstm
@@ -474,16 +474,16 @@ checkClause {vars} mult vis totreq hashit n opts nest env
                 elabTermSub n wmode opts nest' env' env sub' wval_raw Nothing
          clearHoleLHS
 
-         logTerm "declare.def.clause.with" 5 "With value" wval
-         logTerm "declare.def.clause.with" 3 "Required type" reqty
+         logTerm DeclareDefClauseWith 5 "With value" wval
+         logTerm DeclareDefClauseWith 3 "Required type" reqty
          wvalTy <- getTerm gwvalTy
          defs <- get Ctxt
          wval <- normaliseHoles defs env' wval
          wvalTy <- normaliseHoles defs env' wvalTy
 
          let (wevars ** withSub) = keepOldEnv sub' (snd (findSubEnv env' wval))
-         logTerm "declare.def.clause.with" 5 "With value type" wvalTy
-         log "declare.def.clause.with" 5 $ "Using vars " ++ show wevars
+         logTerm DeclareDefClauseWith 5 "With value type" wvalTy
+         log DeclareDefClauseWith 5 $ "Using vars " ++ show wevars
 
          let Just wval = shrinkTerm wval withSub
              | Nothing => throw (InternalError "Impossible happened: With abstraction failure #1")
@@ -521,8 +521,8 @@ checkClause {vars} mult vis totreq hashit n opts nest env
                  = map Just reqns ++
                    Nothing :: map Just notreqns
 
-         logTerm "declare.def.clause.with" 3 "With function type" wtype
-         log "declare.def.clause.with" 5 $ "Argument names " ++ show wargNames
+         logTerm DeclareDefClauseWith 3 "With function type" wtype
+         log DeclareDefClauseWith 5 $ "Argument names " ++ show wargNames
 
          wname <- genWithName !(prettyName !(toFullNames (Resolved n)))
          widx <- addDef wname (record {flags $= (SetTotal totreq ::)}
@@ -543,14 +543,14 @@ checkClause {vars} mult vis totreq hashit n opts nest env
                     $ map (\ nm => (Nothing, IVar vfc nm)) envns
                    ++ concatMap toWarg wargNames
 
-         log "declare.def.clause" 3 $ "Applying to with argument " ++ show rhs_in
+         log DeclareDefClause 3 $ "Applying to with argument " ++ show rhs_in
          rhs <- wrapErrorC opts (InRHS ifc !(getFullName (Resolved n))) $
              checkTermSub n wmode opts nest' env' env sub' rhs_in
                           (gnf env' reqty)
 
          -- Generate new clauses by rewriting the matched arguments
          cs' <- traverse (mkClauseWith 1 wname wargNames lhs) cs
-         log "declare.def.clause.with" 3 $ "With clauses: " ++ show cs'
+         log DeclareDefClauseWith 3 $ "With clauses: " ++ show cs'
 
          -- Elaborate the new definition here
          nestname <- applyEnv env wname
@@ -654,18 +654,18 @@ checkClause {vars} mult vis totreq hashit n opts nest env
                    RawImp -> ImpClause ->
                    Core ImpClause
     mkClauseWith drop wname wargnames lhs (PatClause ploc patlhs rhs)
-        = do log "declare.def.clause.with" 20 "PatClause"
+        = do log DeclareDefClauseWith 20 "PatClause"
              newlhs <- getNewLHS ploc drop nest wname wargnames lhs patlhs
              newrhs <- withRHS ploc drop wname wargnames rhs lhs
              pure (PatClause ploc newlhs newrhs)
     mkClauseWith drop wname wargnames lhs (WithClause ploc patlhs rhs prf flags ws)
-        = do log "declare.def.clause.with" 20 "WithClause"
+        = do log DeclareDefClauseWith 20 "WithClause"
              newlhs <- getNewLHS ploc drop nest wname wargnames lhs patlhs
              newrhs <- withRHS ploc drop wname wargnames rhs lhs
              ws' <- traverse (mkClauseWith (S drop) wname wargnames lhs) ws
              pure (WithClause ploc newlhs newrhs prf flags ws')
     mkClauseWith drop wname wargnames lhs (ImpossibleClause ploc patlhs)
-        = do log "declare.def.clause.with" 20 "ImpossibleClause"
+        = do log DeclareDefClauseWith 20 "ImpossibleClause"
              newlhs <- getNewLHS ploc drop nest wname wargnames lhs patlhs
              pure (ImpossibleClause ploc newlhs)
 
@@ -720,7 +720,7 @@ mkRunTime : {auto c : Ref Ctxt Defs} ->
             {auto u : Ref UST UState} ->
             FC -> Name -> Core ()
 mkRunTime fc n
-    = do log "compile.casetree" 5 $ "Making run time definition for " ++ show !(toFullNames n)
+    = do log CompileCasetree 5 $ "Making run time definition for " ++ show !(toFullNames n)
          defs <- get Ctxt
          Just gdef <- lookupCtxtExact n (gamma defs)
               | _ => pure ()
@@ -741,12 +741,12 @@ mkRunTime fc n
                               _ => clauses_init
 
            (rargs ** (tree_rt, _)) <- getPMDef (location gdef) RunTime n ty clauses
-           logC "compile.casetree" 5 $ pure $ unlines
+           logC CompileCasetree 5 $ pure $ unlines
              [ show cov ++ ":"
              , "Runtime tree for " ++ show (fullname gdef) ++ ":"
              , show (indent 2 $ pretty {ann = ()} !(toFullNames tree_rt))
              ]
-           log "compile.casetree" 10 $ show tree_rt
+           log CompileCasetree 10 $ show tree_rt
 
            let Just Refl = nameListEq cargs rargs
                    | Nothing => throw (InternalError "WAT")
@@ -850,7 +850,7 @@ processDef opts nest env fc n_in cs_in
 
          traverse_ warnUnreachable unreachable
 
-         logC "declare.def" 2 $
+         logC DeclareDef 2 $
                  do t <- toFullNames tree_ct
                     pure ("Case tree for " ++ show n ++ ": " ++ show t)
 
@@ -863,7 +863,7 @@ processDef opts nest env fc n_in cs_in
 
          when (visibility gdef == Public) $
              do let rmetas = getMetas tree_ct
-                log "declare.def" 10 $ "Saving from " ++ show n ++ ": " ++ show (keys rmetas)
+                log DeclareDef 10 $ "Saving from " ++ show n ++ ": " ++ show (keys rmetas)
                 traverse_ addToSave (keys rmetas)
          when (isUserName n && visibility gdef /= Private) $
              do let tymetas = getMetas (type gdef)
@@ -926,7 +926,7 @@ processDef opts nest env fc n_in cs_in
         = do itm <- unelabNoPatvars [] tm
              handleUnify
                (do ctxt <- get Ctxt
-                   log "declare.def.impossible" 3 $ "Checking for impossibility: " ++ show itm
+                   log DeclareDefImpossible 3 $ "Checking for impossibility: " ++ show itm
                    autoimp <- isUnboundImplicits
                    setUnboundImplicits True
                    (_, lhstm) <- bindNames False itm
@@ -936,10 +936,10 @@ processDef opts nest env fc n_in cs_in
                    defs <- get Ctxt
                    lhs <- normaliseHoles defs [] lhstm
                    if !(hasEmptyPat defs [] lhs)
-                      then do log "declare.def.impossible" 5 "No empty pat"
+                      then do log DeclareDefImpossible 5 "No empty pat"
                               put Ctxt ctxt
                               pure Nothing
-                      else do log "declare.def.impossible" 5 "Some empty pat"
+                      else do log DeclareDefImpossible 5 "Some empty pat"
                               empty <- clearDefs ctxt
                               rtm <- closeEnv empty !(nf empty [] lhs)
                               put Ctxt ctxt
@@ -957,9 +957,9 @@ processDef opts nest env fc n_in cs_in
     getClause : Either RawImp Clause -> Core (Maybe Clause)
     getClause (Left rawlhs)
         = catch (do lhsp <- getImpossibleTerm env nest rawlhs
-                    log "declare.def.impossible" 3 $ "Generated impossible LHS: " ++ show lhsp
+                    log DeclareDefImpossible 3 $ "Generated impossible LHS: " ++ show lhsp
                     pure $ Just $ MkClause [] lhsp (Erased (getFC rawlhs) True))
-                (\e => do log "declare.def" 5 $ "Error in getClause " ++ show e
+                (\e => do log DeclareDef 5 $ "Error in getClause " ++ show e
                           pure Nothing)
     getClause (Right c) = pure (Just c)
 
@@ -968,16 +968,16 @@ processDef opts nest env fc n_in cs_in
                     Core Covering
     checkCoverage n ty mult cs
         = do covcs' <- traverse getClause cs -- Make stand in LHS for impossible clauses
-             log "declare.def" 5 $ "Using clauses :" ++ show !(traverse toFullNames covcs')
+             log DeclareDef 5 $ "Using clauses :" ++ show !(traverse toFullNames covcs')
              let covcs = mapMaybe id covcs'
              (_ ** (ctree, _)) <-
                  getPMDef fc (CompileTime mult) (Resolved n) ty covcs
-             log "declare.def" 3 $ "Working from " ++ show !(toFullNames ctree)
+             log DeclareDef 3 $ "Working from " ++ show !(toFullNames ctree)
              missCase <- if any catchAll covcs
-                            then do log "declare.def" 3 $ "Catch all case in " ++ show n
+                            then do log DeclareDef 3 $ "Catch all case in " ++ show n
                                     pure []
                             else getMissing fc (Resolved n) ctree
-             logC "declare.def" 3 $
+             logC DeclareDef 3 $
                      do mc <- traverse toFullNames missCase
                         pure ("Initially missing in " ++
                                  show !(getFullName (Resolved n)) ++ ":\n" ++

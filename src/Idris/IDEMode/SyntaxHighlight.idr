@@ -114,7 +114,7 @@ outputNameSyntax : {auto c : Ref Ctxt Defs} ->
                    (NonEmptyFC, Decoration, Name) -> Core ()
 outputNameSyntax (nfc, decor, nm) = do
       defs <- get Ctxt
-      log "ide-mode.highlight" 20 $ "highlighting at " ++ show nfc
+      log IdemodeHighlight 20 $ "highlighting at " ++ show nfc
                                  ++ ": " ++ show nm
                                  ++ "\nAs: " ++ show decor
       let fc = justFC nfc
@@ -147,7 +147,7 @@ outputSyntaxHighlighting fname loadResult = do
     --_ <- traverse outputNameSyntax allNames -- ++ decls)
 
     let semHigh = meta.semanticHighlighting
-    log "ide-mode.highlight" 19 $
+    log IdemodeHighlight 19 $
       "Semantic metadata is: " ++ show semHigh
 
     let aliases
@@ -155,7 +155,7 @@ outputSyntaxHighlighting fname loadResult = do
           = flip foldMap meta.semanticAliases $ \ (from, to) =>
               let decors = uncurry exactRange (snd to) semHigh in
               map (\ ((fnm, loc), rest) => ((fnm, snd from), rest)) decors
-    log "ide-mode.highlight.alias" 19 $
+    log IdemodeHighlightAlias 19 $
       "Semantic metadata from aliases is: " ++ show aliases
 
     traverse_ {b = Unit}

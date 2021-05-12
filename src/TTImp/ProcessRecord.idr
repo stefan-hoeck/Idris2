@@ -104,7 +104,7 @@ elabRecord {vars} eopts fc env nest newns vis tn params conName_in fields
              let dt = MkImpData fc tn !(bindTypeNames [] (map fst params ++
                                            map fname fields ++ vars)
                                          (mkDataTy fc params)) [] [con]
-             log "declare.record" 5 $ "Record data type " ++ show dt
+             log DeclareRecord 5 $ "Record data type " ++ show dt
              processDecl [] nest env (IData fc vis dt)
 
     countExp : Term vs -> Nat
@@ -140,7 +140,7 @@ elabRecord {vars} eopts fc env nest newns vis tn params conName_in fields
 
                    ty <- unelab tyenv ty_chk
                    let ty' = substNames vars upds ty
-                   log "declare.record.field" 5 $ "Field type: " ++ show ty'
+                   log DeclareRecordField 5 $ "Field type: " ++ show ty'
                    let rname = MN "rec" 0
 
                    -- Claim the projection type
@@ -153,7 +153,7 @@ elabRecord {vars} eopts fc env nest newns vis tn params conName_in fields
                           let ty = MkImpTy EmptyFC EmptyFC nm projTy
                           in IClaim bfc rig isVis [Inline] ty
 
-                   log "declare.record.projection" 5 $
+                   log DeclareRecordProjection 5 $
                       "Projection " ++ show rfNameNS ++ " : " ++ show projTy
                    processDecl [] nest env (mkProjClaim rfNameNS)
 
@@ -171,7 +171,7 @@ elabRecord {vars} eopts fc env nest newns vis tn params conName_in fields
                                     else INamedApp bfc lhs_exp (UN fldNameStr)
                                              (IBindVar bfc fldNameStr))
                    let rhs = IVar EmptyFC (UN fldNameStr)
-                   log "declare.record.projection" 5 $ "Projection " ++ show lhs ++ " = " ++ show rhs
+                   log DeclareRecordProjection 5 $ "Projection " ++ show lhs ++ " = " ++ show rhs
                    processDecl [] nest env
                        (IDef bfc rfNameNS [PatClause bfc lhs rhs])
 
@@ -179,14 +179,14 @@ elabRecord {vars} eopts fc env nest newns vis tn params conName_in fields
                    when !isPrefixRecordProjections $ do  -- beware: `!` is NOT boolean `not`!
                      -- Claim the type.
                      -- we just reuse `projTy` defined above
-                     log "declare.record.projection.prefix" 5 $
+                     log DeclareRecordProjectionPrefix 5 $
                        "Prefix projection " ++ show unNameNS ++ " : " ++ show projTy
                      processDecl [] nest env (mkProjClaim unNameNS)
 
                      -- Define the LHS and RHS
                      let lhs = IVar bfc unNameNS
                      let rhs = IVar bfc rfNameNS
-                     log "declare.record.projection.prefix" 5 $
+                     log DeclareRecordProjectionPrefix 5 $
                        "Prefix projection " ++ show lhs ++ " = " ++ show rhs
                      processDecl [] nest env
                          (IDef bfc unNameNS [PatClause bfc lhs rhs])

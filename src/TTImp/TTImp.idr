@@ -507,7 +507,7 @@ implicitsAs : {auto c : Ref Ctxt Defs} ->
               RawImp -> Core RawImp
 implicitsAs n defs ns tm
   = do let implicits = findIBinds tm
-       log "declare.def.lhs.implicits" 30 $ "Found implicits: " ++ show implicits
+       log DeclareDefLhsImplicits 30 $ "Found implicits: " ++ show implicits
        setAs (map Just (ns ++ map UN implicits)) [] tm
   where
     -- Takes the function application expression which is the lhs of a clause
@@ -532,13 +532,13 @@ implicitsAs n defs ns tm
         -- #834 Use the (already) resolved name rather than the local one
         = case !(lookupTyExact (Resolved n) (gamma defs)) of
             Nothing =>
-               do log "declare.def.lhs.implicits" 30 $
+               do log DeclareDefLhsImplicits 30 $
                     "Could not find variable " ++ show n
                   pure $ IVar loc nm
             Just ty =>
                do ty' <- nf defs [] ty
                   implicits <- findImps is es ns ty'
-                  log "declare.def.lhs.implicits" 30 $
+                  log DeclareDefLhsImplicits 30 $
                     "\n  In the type of " ++ show n ++ ": " ++ show ty ++
                     "\n  Using locals: " ++ show ns ++
                     "\n  Found implicits: " ++ show implicits
@@ -598,7 +598,7 @@ implicitsAs n defs ns tm
                    then findImps ns es [] body
                    else pure $ (x, forgetDef p) :: !(findImps ns es [] body)
         findImps _ _ locals _
-          = do log "declare.def.lhs.implicits" 50 $
+          = do log DeclareDefLhsImplicits 50 $
                   "Giving up with the following locals left: " ++ show locals
                pure []
 
@@ -1175,12 +1175,11 @@ mutual
 -- Log message with a RawImp
 export
 logRaw : {auto c : Ref Ctxt Defs} ->
-         (s : String) ->
-         {auto 0 _ : KnownTopic s} ->
+         (tp : LogTopic) ->
          Nat -> Lazy String -> RawImp -> Core ()
-logRaw str n msg tm
+logRaw tp n msg tm
     = do opts <- getSession
-         let lvl = mkLogLevel (logEnabled opts) str n
+         let lvl = mkLogLevel (logEnabled opts) tp n
          if keepLog lvl (logEnabled opts) (logLevel opts)
             then do coreLift $ putStrLn $ "LOG " ++ show lvl ++ ": " ++ msg
                                           ++ ": " ++ show tm

@@ -703,11 +703,11 @@ inferAndNormalize : {auto c : Ref Ctxt Defs} ->
   Core TermWithType
 inferAndNormalize emode itm
   = do (tm `WithType` ty) <- inferAndElab (elabMode emode) itm
-       logTerm "repl.eval" 10 "Elaborated input" tm
+       logTerm ReplEval 10 "Elaborated input" tm
        defs <- get Ctxt
        let norm = replEval emode
        ntm <- norm defs [] tm
-       logTermNF "repl.eval" 5 "Normalised" [] ntm
+       logTermNF ReplEval 5 "Normalised" [] ntm
        pure $ ntm `WithType` ty
   where
     elabMode : REPLEval -> ElabMode

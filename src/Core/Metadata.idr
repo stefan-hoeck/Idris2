@@ -203,7 +203,7 @@ addNameType loc n env tm
          -- Add the name to the metadata if the file context is not empty
          whenJust (isNonEmptyFC loc) $ \ neloc => do
            put MD $ record { names $= ((neloc, (n', 0, substEnv loc env tm)) ::) } meta
-           log "metadata.names" 7 $ show n' ++ " at line " ++ show (1 + startLine neloc)
+           log MetadataNames 7 $ show n' ++ " at line " ++ show (1 + startLine neloc)
 
 export
 addTyDecl : {vars : _} ->
@@ -306,7 +306,7 @@ addSemanticDecorations decors
                                             . (\((fn, _), _) => fn))
                                            decors
          unless (isNil droppedDecors)
-           $ log "ide-mode.highlight" 19 $ "ignored adding decorations to "
+           $ log IdemodeHighlight 19 $ "ignored adding decorations to "
                ++ meta.sourcefile ++ ": " ++ show droppedDecors
          put MD $ record {semanticHighlighting
                             = (fromList newDecors) `union` posmap} meta

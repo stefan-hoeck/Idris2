@@ -526,7 +526,7 @@ successful allowCons ((tm, elab) :: elabs)
          md <- get MD
          defs <- branch
          catch (do -- Run the elaborator
-                   logC "elab" 5 $
+                   logC Elab 5 $
                             do tm' <- maybe (pure (UN "__"))
                                              toFullNames tm
                                pure ("Running " ++ show tm')
@@ -546,7 +546,7 @@ successful allowCons ((tm, elab) :: elabs)
                    put EST est
                    put MD md
                    put Ctxt defs
-                   logC "elab" 5 $
+                   logC Elab 5 $
                             do tm' <- maybe (pure (UN "__"))
                                             toFullNames tm
                                pure ("Success " ++ show tm' ++
@@ -691,9 +691,9 @@ convertWithLazy withLazy fc elabinfo env x y
                        _ => inTerm in
           catch
             (do let lazy = !isLazyActive && withLazy
-                logGlueNF "elab.unify" 5 ("Unifying " ++ show withLazy ++ " "
+                logGlueNF ElabUnify 5 ("Unifying " ++ show withLazy ++ " "
                              ++ show (elabMode elabinfo)) env x
-                logGlueNF "elab.unify" 5 "....with" env y
+                logGlueNF ElabUnify 5 "....with" env y
                 vs <- if isFromTerm x && isFromTerm y
                          then do xtm <- getTerm x
                                  ytm <- getTerm y
@@ -749,21 +749,21 @@ checkExpP rig elabinfo env fc tm got (Just exp)
     = do vs <- convertWithLazy True fc elabinfo env got exp
          case (constraints vs) of
               [] => case addLazy vs of
-                         NoLazy => do logTerm "elab" 5 "Solved" tm
+                         NoLazy => do logTerm Elab 5 "Solved" tm
                                       pure (tm, got)
-                         AddForce r => do logTerm "elab" 5 "Force" tm
-                                          logGlue "elab" 5 "Got" env got
-                                          logGlue "elab" 5 "Exp" env exp
+                         AddForce r => do logTerm Elab 5 "Force" tm
+                                          logGlue Elab 5 "Got" env got
+                                          logGlue Elab 5 "Exp" env exp
                                           pure (TForce fc r tm, exp)
                          AddDelay r => do ty <- getTerm got
-                                          logTerm "elab" 5 "Delay" tm
+                                          logTerm Elab 5 "Delay" tm
                                           pure (TDelay fc r ty tm, exp)
-              cs => do logTerm "elab" 5 "Not solved" tm
+              cs => do logTerm Elab 5 "Not solved" tm
                        defs <- get Ctxt
                        empty <- clearDefs defs
                        cty <- getTerm exp
                        ctm <- newConstant fc rig env tm cty cs
-                       dumpConstraints "elab" 5 False
+                       dumpConstraints Elab 5 False
                        case addLazy vs of
                             NoLazy => pure (ctm, got)
                             AddForce r => pure (TForce fc r tm, exp)

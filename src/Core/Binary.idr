@@ -254,7 +254,7 @@ writeToTTC extradata fname
          defs <- get Ctxt
          ust <- get UST
          gdefs <- getSaveDefs (keys (toSave defs)) [] defs
-         log "ttc.write" 5 $ "Writing " ++ fname ++ " with hash " ++ show (ifaceHash defs)
+         log TtcWrite 5 $ "Writing " ++ fname ++ " with hash " ++ show (ifaceHash defs)
          writeTTCFile bin
                    (MkTTCFile ttcVersion (ifaceHash defs) (importHashes defs)
                               gdefs
@@ -309,7 +309,7 @@ addGlobalDef modns asm (n, def)
 addTypeHint : {auto c : Ref Ctxt Defs} ->
               FC -> (Name, Name, Bool) -> Core ()
 addTypeHint fc (tyn, hintn, d)
-   = do logC "ttc.read" 10 (pure (show !(getFullName hintn) ++ " for " ++
+   = do logC TtcRead 10 (pure (show !(getFullName hintn) ++ " for " ++
                             show !(getFullName tyn)))
         addHintFor fc tyn hintn d True
 

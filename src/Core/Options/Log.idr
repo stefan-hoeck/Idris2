@@ -32,7 +32,8 @@ import Libraries.Text.PrettyPrint.Prettyprinter
 ||| through and deliver a lot of information about scope-checking let binders.
 public export
 data LogTopic =
-      Auto
+      Empty
+    | Auto
     | BuiltinNatural
     | BuiltinNaturalAddTransform
     | BuiltinNaturalToInteger
@@ -143,6 +144,7 @@ data LogTopic =
 ---------------------------------------------------------------------
 
 logTopics : LogTopic -> List String
+logTopics Empty = []
 logTopics Auto = [ "auto" ]
 logTopics BuiltinNatural = [ "builtin", "Natural" ]
 logTopics BuiltinNaturalAddTransform = [ "builtin", "Natural", "addTransform" ]

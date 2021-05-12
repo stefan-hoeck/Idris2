@@ -23,7 +23,7 @@ firstAvailable : {auto c : Ref Ctxt Defs} ->
                  List String -> Core (Maybe String)
 firstAvailable [] = pure Nothing
 firstAvailable (f :: fs)
-    = do log "import.file" 30 $ "Attempting to read " ++ f
+    = do log ImportFile 30 $ "Attempting to read " ++ f
          Right ok <- coreLift $ openFile f Read
                | Left err => firstAvailable fs
          coreLift $ closeFile ok

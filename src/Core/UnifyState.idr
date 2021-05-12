@@ -421,8 +421,8 @@ newMetaLets {vars} fc rig env n ty def nocyc lets
                            else abstractEnvType fc env ty
          let hole = record { noCycles = nocyc }
                            (newDef fc n rig [] hty Public def)
-         log "unify.meta" 5 $ "Adding new meta " ++ show (n, fc, rig)
-         logTerm "unify.meta" 10 ("New meta type " ++ show n) hty
+         log UnifyMeta 5 $ "Adding new meta " ++ show (n, fc, rig)
+         logTerm UnifyMeta 10 ("New meta type " ++ show n) hty
          defs <- get Ctxt
          idx <- addDef n hole
          addHoleName fc n idx
@@ -468,8 +468,8 @@ newConstant {vars} fc rig env tm ty constrs
          cn <- genName "postpone"
          let guess = newDef fc cn rig [] defty Public
                             (Guess def (length env) constrs)
-         log "unify.constant" 5 $ "Adding new constant " ++ show (cn, fc, rig)
-         logTerm "unify.constant" 10 ("New constant type " ++ show cn) defty
+         log UnifyConstant 5 $ "Adding new constant " ++ show (cn, fc, rig)
+         logTerm UnifyConstant 10 ("New constant type " ++ show cn) defty
          idx <- addDef cn guess
          addGuessName fc cn idx
          pure (Meta fc cn idx envArgs)
@@ -490,8 +490,8 @@ newSearch : {vars : _} ->
 newSearch {vars} fc rig depth def env n ty
     = do let hty = abstractEnvType fc env ty
          let hole = newDef fc n rig [] hty Public (BySearch rig depth def)
-         log "unify.search" 10 $ "Adding new search " ++ show fc ++ " " ++ show n
-         logTermNF "unify.search" 10 "New search type" [] hty
+         log UnifySearch 10 $ "Adding new search " ++ show fc ++ " " ++ show n
+         logTermNF UnifySearch 10 "New search type" [] hty
          idx <- addDef n hole
          addGuessName fc n idx
          pure (idx, Meta fc n idx envArgs)
@@ -512,7 +512,7 @@ newDelayed {vars} fc rig env n ty
     = do let hty = abstractEnvType fc env ty
          let hole = newDef fc n rig [] hty Public Delayed
          idx <- addDef n hole
-         log "unify.delay" 10 $ "Added delayed elaborator " ++ show (n, idx)
+         log UnifyDelay 10 $ "Added delayed elaborator " ++ show (n, idx)
          addHoleName fc n idx
          pure (idx, Meta fc n idx envArgs)
   where
@@ -629,7 +629,7 @@ checkUserHolesAfter : {auto u : Ref UST UState} ->
 checkUserHolesAfter base now
     = do gs_map <- getGuesses
          let gs = toList gs_map
-         log "unify.unsolved" 10 $ "Unsolved guesses " ++ show gs
+         log UnifyUnsolved 10 $ "Unsolved guesses " ++ show gs
          traverse_ (checkValidHole base) gs
          hs_map <- getCurrentHoles
          let hs = toList hs_map
@@ -718,16 +718,15 @@ dumpHole' lvl hole
 export
 dumpConstraints : {auto u : Ref UST UState} ->
                   {auto c : Ref Ctxt Defs} ->
-                  (topics : String) ->
-                  {auto 0 _ : KnownTopic topics} ->
+                  (topics : LogTopic) ->
                   (verbosity : Nat) ->
                   (all : Bool) ->
                   Core ()
-dumpConstraints str n all
+dumpConstraints tp n all
     = do ust <- get UST
          defs <- get Ctxt
          sopts <- getSession
-         let lvl = mkLogLevel (logEnabled sopts) str n
+         let lvl = mkLogLevel (logEnabled sopts) tp n
          when (keepLog lvl (logEnabled sopts) (logLevel sopts)) $
             do let hs = toList (guesses ust) ++
                         toList (if all then holes ust else currentHoles ust)

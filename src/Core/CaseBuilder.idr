@@ -805,18 +805,18 @@ mutual
   -- has the most distinct constructors (via pickNext)
   match {todo = (_ :: _)} fc fn phase clauses err
       = do (n ** MkNVar next) <- pickNext fc phase fn (map getNPs clauses)
-           log "compile.casetree" 25 $ "Picked " ++ show n ++ " as the next split"
+           log CompileCasetree 25 $ "Picked " ++ show n ++ " as the next split"
            let clauses' = map (shuffleVars next) clauses
-           log "compile.casetree" 25 $ "Using clauses " ++ show clauses'
+           log CompileCasetree 25 $ "Using clauses " ++ show clauses'
            let ps = partition phase clauses'
-           log "compile.casetree" 25 $ "Got Partition " ++ show ps
+           log CompileCasetree 25 $ "Got Partition " ++ show ps
            mix <- mixture fc fn phase ps err
            case mix of
              Nothing =>
-               do log "compile.casetree" 25 "match: No clauses"
+               do log CompileCasetree 25 "match: No clauses"
                   pure (Unmatched "No clauses")
              Just m =>
-               do log "compile.casetree" 25 $ "match: new case tree " ++ show m
+               do log CompileCasetree 25 $ "match: new case tree " ++ show m
                   Core.pure m
   match {todo = []} fc fn phase [] err
        = maybe (pure (Unmatched "No patterns"))
@@ -931,7 +931,7 @@ mkPat args orig (Ref fc Func n)
        case mtm of
          Just tm => mkPat [] tm tm
          Nothing =>
-           do log "compile.casetree" 10 $
+           do log CompileCasetree 10 $
                 "Unmatchable function: " ++ show n
               pure $ PUnmatchable (getLoc orig) orig
 mkPat args orig (Bind fc x (Pi _ _ _ s) t)
@@ -952,7 +952,7 @@ mkPat args orig (PrimVal fc c)
          else PTyCon fc (UN (show c)) 0 []
 mkPat args orig (TType fc) = pure $ PTyCon fc (UN "Type") 0 []
 mkPat args orig tm
-   = do log "compile.casetree" 10 $
+   = do log CompileCasetree 10 $
           "Catchall: marking " ++ show tm ++ " as unmatchable"
         pure $ PUnmatchable (getLoc orig) orig
 
@@ -972,7 +972,7 @@ mkPatClause fc fn args ty pid (ps, rhs)
                do defs <- get Ctxt
                   nty <- nf defs [] ty
                   ns <- mkNames args ps eq (Just nty)
-                  log "compile.casetree" 20 $
+                  log CompileCasetree 20 $
                     "Make pat clause for names " ++ show ns
                      ++ " in LHS " ++ show ps
                   pure (MkPatClause [] ns pid
@@ -1015,12 +1015,12 @@ patCompile fc fn phase ty (p :: ps) def
     = do let (ns ** n) = getNames 0 (fst p)
          pats <- mkPatClausesFrom 0 ns (p :: ps)
          -- low verbosity level: pretty print fully resolved names
-         logC "compile.casetree" 5 $ do
+         logC CompileCasetree 5 $ do
            pats <- traverse toFullNames pats
            pure $ "Pattern clauses:\n"
                 ++ show (indent 2 $ vcat $ pretty {ann = ()} <$> pats)
          -- higher verbosity: dump the raw data structure
-         log "compile.casetree" 10 $ show pats
+         log CompileCasetree 10 $ show pats
          i <- newRef PName (the Int 0)
          cases <- match fc fn phase pats
                         (rewrite sym (appendNilRightNeutral ns) in
@@ -1065,7 +1065,7 @@ simpleCase : {auto c : Ref Ctxt Defs} ->
              (clauses : List (ClosedTerm, ClosedTerm)) ->
              Core (args ** CaseTree args)
 simpleCase fc phase fn ty def clauses
-    = do logC "compile.casetree" 5 $
+    = do logC CompileCasetree 5 $
                 do cs <- traverse (\ (c,d) => [| MkPair (toFullNames c) (toFullNames d) |]) clauses
                    pure $ "simpleCase: Clauses:\n" ++ show (
                      indent {ann = ()} 2 $ vcat $ flip map cs $ \ (lrhs) =>
@@ -1094,7 +1094,7 @@ getPMDef : {auto c : Ref Ctxt Defs} ->
 -- for the type, which we can use in coverage checking to ensure that one of
 -- the arguments has an empty type
 getPMDef fc phase fn ty []
-    = do log "compile.casetree" 20 "getPMDef: No clauses!"
+    = do log CompileCasetree 20 "getPMDef: No clauses!"
          defs <- get Ctxt
          pure (!(getArgs 0 !(nf defs [] ty)) ** (Unmatched "No clauses", []))
   where
@@ -1108,7 +1108,7 @@ getPMDef fc phase fn ty clauses
     = do defs <- get Ctxt
          let cs = map (toClosed defs) (labelPat 0 clauses)
          (_ ** t) <- simpleCase fc phase fn ty Nothing cs
-         logC "compile.casetree" 20 $
+         logC CompileCasetree 20 $
            pure $ "Compiled to: " ++ show !(toFullNames t)
          let reached = findReached t
          pure (_ ** (t, getUnreachable 0 reached clauses))

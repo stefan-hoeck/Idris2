@@ -1008,7 +1008,7 @@ header = do
                     , "#include <idris_support.h> // for libidris2_support"]
     extLibs <- get ExternalLibs
     let extLibLines = map (\lib => "// add header(s) for library: " ++ lib ++ "\n") extLibs
-    traverse_ (\l => log "compiler.refc" 20 $ " header for " ++ l ++ " needed") extLibs
+    traverse_ (\l => log CompilerRefc 20 $ " header for " ++ l ++ " needed") extLibs
     fns <- get FunctionDefinitions
     update OutfileText (appendL (initLines ++ extLibLines ++ ["\n// function definitions"] ++ fns))
 
@@ -1048,7 +1048,7 @@ generateCSourceFile defs outn =
      let code = fastAppend (map (++ "\n") (reify fileContent))
 
      coreLift_ $ writeFile outn code
-     log "compiler.refc" 10 $ "Generated C file " ++ outn
+     log CompilerRefc 10 $ "Generated C file " ++ outn
 
 export
 compileExpr : UsePhase

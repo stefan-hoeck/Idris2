@@ -76,10 +76,10 @@ elabRewrite loc env expected rulety
          -- the metavariables might have been updated
          expnf <- nf defs env expected
 
-         logNF "elab.rewrite" 5 "Rewriting" env lt
-         logNF "elab.rewrite" 5 "Rewriting in" env expnf
+         logNF ElabRewrite 5 "Rewriting" env lt
+         logNF ElabRewrite 5 "Rewriting in" env expnf
          rwexp_sc <- replace defs env lt (Ref loc Bound parg) expnf
-         logTerm "elab.rewrite" 5 "Rewritten to" rwexp_sc
+         logTerm ElabRewrite 5 "Rewritten to" rwexp_sc
 
          empty <- clearDefs defs
          let pred = Bind loc parg (Lam loc top Explicit
@@ -113,7 +113,7 @@ checkRewrite {vars} rigc elabinfo nest env ifc rule tm (Just expected)
            (rulev, grulet) <- check erased elabinfo nest env rule Nothing
            rulet <- getTerm grulet
            expTy <- getTerm expected
-           when delayed $ log "elab.rewrite" 5 "Retrying rewrite"
+           when delayed $ log ElabRewrite 5 "Retrying rewrite"
            (lemma, pred, predty) <- elabRewrite vfc env expTy rulet
 
            rname <- genVarName "_"

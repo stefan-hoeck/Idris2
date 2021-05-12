@@ -151,16 +151,16 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
          let impsp = nub (concatMap findIBinds ps ++
                           concatMap findIBinds (map snd cons))
 
-         logTerm "elab.implementation" 3 ("Found interface " ++ show cn) ity
-         log "elab.implementation" 3 $
+         logTerm ElabImplementation 3 ("Found interface " ++ show cn) ity
+         log ElabImplementation 3 $
                  "\n  with params: " ++ show (params cdata)
                  ++ "\n  specialised to: " ++ show ps
                  ++ "\n  and parents: " ++ show (parents cdata)
                  ++ "\n  using implicits: " ++ show impsp
                  ++ "\n  and methods: " ++ show (methods cdata) ++ "\n"
                  ++ "\nConstructor: " ++ show (iconstructor cdata) ++ "\n"
-         logTerm "elab.implementation" 3 "Constructor type: " conty
-         log "elab.implementation" 5 $ "Making implementation " ++ show impName
+         logTerm ElabImplementation 3 "Constructor type: " conty
+         log ElabImplementation 5 $ "Making implementation " ++ show impName
 
          -- 1. Build the type for the implementation
          -- Make the constraints auto implicit arguments, which can be explicitly
@@ -180,7 +180,7 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
 
          let impTyDecl = IClaim vfc top vis opts (MkImpTy EmptyFC EmptyFC impName impTy)
 
-         log "elab.implementation" 5 $ "Implementation type: " ++ show impTy
+         log ElabImplementation 5 $ "Implementation type: " ++ show impTy
 
          when (typePass pass) $ processDecl [] nest env impTyDecl
 
@@ -192,7 +192,7 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
                Just impTyc <- lookupTyExact impName (gamma defs)
                     | Nothing => throw (InternalError ("Can't happen, can't find type of " ++ show impName))
                methImps <- getMethImps [] impTyc
-               log "elab.implementation" 3 $ "Bind implicits to each method: " ++ show methImps
+               log ElabImplementation 3 $ "Bind implicits to each method: " ++ show methImps
 
                -- 1.5. Lookup default definitions and add them to the body
                let (body, missing)
@@ -201,13 +201,13 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
                                       (map (dropNS . name) (methods cdata))
                                       (defaults cdata) body_in
 
-               log "elab.implementation" 5 $ "Added defaults: body is " ++ show body
-               log "elab.implementation" 5 $ "Missing methods: " ++ show missing
+               log ElabImplementation 5 $ "Added defaults: body is " ++ show body
+               log ElabImplementation 5 $ "Missing methods: " ++ show missing
 
                -- Add the 'using' hints
                defs <- get Ctxt
                let hs = openHints defs -- snapshot open hint state
-               log "elab.implementation" 10 $ "Open hints: " ++ (show (impName :: nusing))
+               log ElabImplementation 10 $ "Open hints: " ++ (show (impName :: nusing))
                traverse_ (\n => do n' <- checkUnambig vfc n
                                    addOpenHint n') nusing
 
@@ -229,11 +229,11 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
                -- parent constraints, then the method implementations
                defs <- get Ctxt
                let fldTys = getFieldArgs !(normaliseHoles defs [] conty)
-               log "elab.implementation" 5 $ "Field types " ++ show fldTys
+               log ElabImplementation 5 $ "Field types " ++ show fldTys
                let irhs = apply (autoImpsApply (IVar vfc con) $ map (const (ISearch vfc 500)) (parents cdata))
                                   (map (mkMethField methImps fldTys) fns)
                let impFn = IDef vfc impName [PatClause vfc ilhs irhs]
-               log "elab.implementation" 5 $ "Implementation record: " ++ show impFn
+               log ElabImplementation 5 $ "Implementation record: " ++ show impFn
 
                -- If it's a named implementation, add it as a global hint while
                -- elaborating the record and bodies
@@ -262,7 +262,7 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
                let upds = map methNameUpdate fns
                body' <- traverse (updateBody upds) body
 
-               log "elab.implementation" 10 $ "Implementation body: " ++ show body'
+               log ElabImplementation 10 $ "Implementation body: " ++ show body'
                traverse_ (processDecl [] nest' env) body'
 
                -- 6. Add transformation rules for top level methods
@@ -397,7 +397,7 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
                                 mty_in
              let mty_params
                    = substNames vars (zip pnames ps) mty_iparams
-             log "elab.implementation" 5 $ "Substitute implicits " ++ show imppnames ++
+             log ElabImplementation 5 $ "Substitute implicits " ++ show imppnames ++
                      " parameters " ++ show (zip pnames ps) ++
                      " "  ++ show mty_in ++ " is " ++
                      show mty_params
@@ -409,15 +409,15 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
 
              mty <- bindTypeNamesUsed ibound vars mbase
 
-             log "elab.implementation" 3 $
+             log ElabImplementation 3 $
                      "Method " ++ show meth.name ++ " ==> " ++
                      show n ++ " : " ++ show mty
-             log "elab.implementation" 3 $ "    (initially " ++ show mty_in ++ ")"
-             log "elab.implementation" 5 $ "Updates " ++ show methupds
-             log "elab.implementation" 5 $ "From " ++ show mbase
-             log "elab.implementation" 3 $ "Name updates " ++ show upds
-             log "elab.implementation" 3 $ "Param names: " ++ show pnames
-             log "elab.implementation" 10 $ "Used names " ++ show ibound
+             log ElabImplementation 3 $ "    (initially " ++ show mty_in ++ ")"
+             log ElabImplementation 5 $ "Updates " ++ show methupds
+             log ElabImplementation 5 $ "From " ++ show mbase
+             log ElabImplementation 3 $ "Name updates " ++ show upds
+             log ElabImplementation 3 $ "Param names: " ++ show pnames
+             log ElabImplementation 10 $ "Used names " ++ show ibound
              let ibinds = map fst methImps
              let methupds' = if isNil ibinds then []
                              else [(n, impsApply (IVar vfc n)
@@ -492,7 +492,7 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
     updateBody ns (IDef fc n cs)
         = do cs' <- traverse (updateClause ns) cs
              n' <- findMethName ns fc n
-             log "ide-mode.highlight" 1 $ show (n, n', fc)
+             log IdemodeHighlight 1 $ show (n, n', fc)
              pure (IDef fc n' cs')
     updateBody ns e
         = throw (GenericMsg (getFC e)
@@ -502,7 +502,7 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
                    Method ->
                    Core ()
     addTransform iname ns meth
-        = do log "elab.implementation" 3 $
+        = do log ElabImplementation 3 $
                      "Adding transform for " ++ show meth.name ++ " : " ++ show meth.type ++
                      "\n\tfor " ++ show iname ++ " in " ++ show ns
              let lhs = INamedApp vfc (IVar vfc meth.name)
@@ -511,11 +511,11 @@ elabImplementation {vars} ifc vis opts_in pass env nest is cons iname ps named i
              let Just mname = lookup (dropNS meth.name) ns
                  | Nothing => pure ()
              let rhs = IVar vfc mname
-             log "elab.implementation" 5 $ show lhs ++ " ==> " ++ show rhs
+             log ElabImplementation 5 $ show lhs ++ " ==> " ++ show rhs
              handleUnify
                  (processDecl [] nest env
                      (ITransform vfc (UN (show meth.name ++ " " ++ show iname)) lhs rhs))
                  (\err =>
-                     log "elab.implementation" 5 $ "Can't add transform " ++
+                     log ElabImplementation 5 $ "Can't add transform " ++
                                 show lhs ++ " ==> " ++ show rhs ++
                              "\n\t" ++ show err)

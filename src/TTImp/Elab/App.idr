@@ -48,19 +48,19 @@ getNameType rigc env fc x
                  let binder = getBinder lv env
                  let bty = binderType binder
 
-                 log "metadata.names" 7 $ "getNameType is adding ↓"
+                 log MetadataNames 7 $ "getNameType is adding ↓"
                  addNameType fc x env bty
 
                  when (isLinear rigb) $
                       do est <- get EST
                          put EST
                             (record { linearUsed $= ((MkVar lv) :: ) } est)
-                 log "ide-mode.highlight" 8
+                 log IdemodeHighlight 8
                      $ "getNameType is trying to add Bound: "
                       ++ show x ++ " (" ++ show fc ++ ")"
                  when (isSourceName x) $
                    whenJust (isConcreteFC fc) \nfc => do
-                     log "ide-mode.highlight" 7 $ "getNameType is adding Bound: " ++ show x
+                     log IdemodeHighlight 7 $ "getNameType is adding Bound: " ++ show x
                      addSemanticDecorations [(nfc, Bound, Just x)]
 
                  pure (Local fc (Just (isLet binder)) _ lv, gnf env bty)
@@ -77,14 +77,14 @@ getNameType rigc env fc x
                                TCon t a _ _ _ _ _ _ => TyCon t a
                                _ => Func
 
-                 log "ide-mode.highlight" 8
+                 log IdemodeHighlight 8
                      $ "getNameType is trying to add something for: "
                       ++ show def.fullname ++ " (" ++ show fc ++ ")"
 
                  when (isSourceName def.fullname) $
                    whenJust (isConcreteFC fc) \nfc => do
                      let decor = nameTypeDecoration nt
-                     log "ide-mode.highlight" 7
+                     log IdemodeHighlight 7
                        $ "getNameType is adding " ++ show decor ++ ": " ++ show def.fullname
                      addSemanticDecorations [(nfc, decor, Just def.fullname)]
 
@@ -122,18 +122,18 @@ getVarType rigc nest env fc x
                              tyenv = useVars (getArgs tm)
                                              (embed (type ndef)) in
                              do checkVisibleNS fc (fullname ndef) (visibility ndef)
-                                logTerm "elab" 5 ("Type of " ++ show n') tyenv
-                                logTerm "elab" 5 ("Expands to") tm
-                                log "elab" 5 $ "Arg length " ++ show arglen
+                                logTerm Elab 5 ("Type of " ++ show n') tyenv
+                                logTerm Elab 5 ("Expands to") tm
+                                log Elab 5 $ "Arg length " ++ show arglen
 
                                 -- Add the type to the metadata
-                                log "metadata.names" 7 $ "getVarType is adding ↓"
+                                log MetadataNames 7 $ "getVarType is adding ↓"
                                 addNameType fc x env tyenv
 
                                 when (isSourceName ndef.fullname) $
                                   whenJust (isConcreteFC fc) \nfc => do
                                     let decor = nameTypeDecoration nt
-                                    log "ide-mode.highlight" 7
+                                    log IdemodeHighlight 7
                                        $ "getNameType is adding "++ show decor ++": "
                                                                  ++ show ndef.fullname
                                     addSemanticDecorations [(nfc, decor, Just ndef.fullname)]
@@ -350,7 +350,7 @@ mutual
     Term vars -> Glued vars ->
     Core (Term vars, Glued vars)
   checkValidPattern rig env fc tm ty
-    = do log "elab.app.lhs" 50 $ "Checking that " ++ show tm ++ " is a valid pattern"
+    = do log ElabAppLhs 50 $ "Checking that " ++ show tm ++ " is a valid pattern"
          case tm of
            Bind _ _ (Lam _ _ _ _)  _ => registerDot rig env fc NotConstructor tm ty
            _ => pure (tm, ty)
@@ -453,14 +453,14 @@ mutual
              metaty <- quote empty env aty
              (idx, metaval) <- argVar (getFC arg) argRig env nm metaty
              let fntm = App fc tm metaval
-             logNF "elab" 10 ("Delaying " ++ show nm ++ " " ++ show arg) env aty
-             logTerm "elab" 10 "...as" metaval
+             logNF Elab 10 ("Delaying " ++ show nm ++ " " ++ show arg) env aty
+             logTerm Elab 10 "...as" metaval
              fnty <- sc defs (toClosure defaultOpts env metaval)
              (tm, gty) <- checkAppWith rig elabinfo nest env fc
                                        fntm fnty (n, 1 + argpos) expargs autoargs namedargs kr expty
              defs <- get Ctxt
              aty' <- nf defs env metaty
-             logNF "elab" 10 ("Now trying " ++ show nm ++ " " ++ show arg) env aty'
+             logNF Elab 10 ("Now trying " ++ show nm ++ " " ++ show arg) env aty'
 
              res <- check argRig elabinfo nest env arg (Just $ glueBack defs env aty')
              (argv, argt) <-
@@ -475,7 +475,7 @@ mutual
              -- *may* have as patterns in it and we need to retain them.
              -- (As patterns are a bit of a hack but I don't yet see a
              -- better way that leads to good code...)
-             logTerm "elab" 5 ("Solving " ++ show metaval ++ " with") argv
+             logTerm Elab 5 ("Solving " ++ show metaval ++ " with") argv
              ok <- solveIfUndefined env metaval argv
              -- If there's a constraint, make a constant, but otherwise
              -- just return the term as expected
@@ -495,10 +495,10 @@ mutual
              removeHole idx
              pure (tm, gty)
            else do
-             logNF "elab" 10 ("Argument type " ++ show x) env aty
-             logNF "elab" 10 ("Full function type") env
+             logNF Elab 10 ("Argument type " ++ show x) env aty
+             logNF Elab 10 ("Full function type") env
                       (NBind fc x (Pi fc argRig Explicit aty) sc)
-             logC "elab" 10
+             logC Elab 10
                      (do ety <- maybe (pure Nothing)
                                      (\t => pure (Just !(toFullNames!(getTerm t))))
                                      expty
@@ -511,7 +511,7 @@ mutual
                  else do let (argv, argt) = res
                          checkValidPattern rig env fc argv argt
 
-             logGlueNF "elab" 10 "Got arg type" env argt
+             logGlueNF Elab 10 "Got arg type" env argt
              defs <- get Ctxt
              let fntm = App fc tm argv
              fnty <- sc defs (toClosure defaultOpts env argv)
@@ -671,8 +671,8 @@ mutual
   checkAppWith' {vars} rig elabinfo nest env fc tm ty (n, argpos) (arg :: expargs) autoargs namedargs kr expty
       = -- Invent a function type,  and hope that we'll know enough to solve it
         -- later when we unify with expty
-        do logNF "elab.with" 10 "Function type" env ty
-           logTerm "elab.with" 10 "Function " tm
+        do logNF ElabWith 10 "Function type" env ty
+           logTerm ElabWith 10 "Function " tm
            argn <- genName "argTy"
            retn <- genName "retTy"
            argTy <- metaVar fc erased env argn (TType fc)
@@ -686,8 +686,8 @@ mutual
            defs <- get Ctxt
            fnty <- nf defs env retTy -- (Bind fc argn (Let RigW argv argTy) retTy)
            let expfnty = gnf env (Bind fc argn (Pi fc top Explicit argTy) (weaken retTy))
-           logGlue "elab.with" 10 "Expected function type" env expfnty
-           whenJust expty (logGlue "elab.with" 10 "Expected result type" env)
+           logGlue ElabWith 10 "Expected function type" env expfnty
+           whenJust expty (logGlue ElabWith 10 "Expected result type" env)
            res <- checkAppWith' rig elabinfo nest env fc fntm fnty (n, 1 + argpos) expargs autoargs namedargs kr expty
            cres <- Check.convert fc elabinfo env (glueBack defs env ty) expfnty
            let [] = constraints cres
@@ -766,7 +766,7 @@ checkApp rig elabinfo nest env fc (IVar fc' n) expargs autoargs namedargs exp
 
         addNameLoc fc' n
 
-        logC "elab" 10
+        logC Elab 10
                 (do defs <- get Ctxt
                     fnty <- quote defs env nty
                     exptyt <- maybe (pure Nothing)

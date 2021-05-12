@@ -105,10 +105,10 @@ mutual
                  Core ImpClause
       mkClause fc dropped (vs ** (env, lhs, rhs))
           = do let pat = nthArg fc dropped lhs
-               logTerm "unelab.case" 20 "Unelaborating LHS" pat
+               logTerm UnelabCase 20 "Unelaborating LHS" pat
                lhs' <- unelabTy Full env pat
-               logTerm "unelab.case" 20 "Unelaborating RHS" rhs
-               logEnv "unelab.case" 20 "In Env" env
+               logTerm UnelabCase 20 "Unelaborating RHS" rhs
+               logEnv UnelabCase 20 "In Env" env
                rhs' <- unelabTy Full env rhs
                pure (PatClause fc (fst lhs') (fst rhs'))
 
@@ -130,12 +130,12 @@ mutual
       = let (f, args) = getFnArgs tm [] in
             case f of
              IVar fc (NS ns (CaseBlock n i)) =>
-               do log "unelab.case" 20 $ unlines
+               do log UnelabCase 20 $ unlines
                          [ "Unelaborating case " ++ show (n, i)
                          , "with arguments: " ++ show args
                          ]
                   tm <- unelabCase (NS ns (CaseBlock n i)) args tm
-                  log "unelab.case" 20 $ "Unelaborated to: " ++ show tm
+                  log UnelabCase 20 $ "Unelaborated to: " ++ show tm
                   pure (tm, ty)
              _ => pure (tm, ty)
 
@@ -159,7 +159,7 @@ mutual
               Core (RawImp, Glued vars)
   unelabTy' umode env (Local fc _ idx p)
       = do let nm = nameAt p
-           log "unelab.case" 20 $ "Found local name: " ++ show nm
+           log UnelabCase 20 $ "Found local name: " ++ show nm
            let ty = gnf env (binderType (getBinder p env))
            pure (IVar fc nm, ty)
   unelabTy' umode env (Ref fc nt n)

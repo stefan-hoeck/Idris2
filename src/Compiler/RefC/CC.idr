@@ -38,7 +38,7 @@ compileCObjectFile {asLibrary} sourceFile objectFile =
                        "-I" ++ fullprefix_dir dirs "refc " ++
                        "-I" ++ fullprefix_dir dirs "include"
 
-     log "compiler.refc.cc" 10 runccobj
+     log CompilerRefcCc 10 runccobj
      0 <- coreLift $ system runccobj
        | _ => pure Nothing
 
@@ -63,7 +63,7 @@ compileCFile {asShared} objectFile outFile =
                        "-L" ++ fullprefix_dir dirs "refc " ++
                        clibdirs (lib_dirs dirs)
 
-     log "compiler.refc.cc" 10 runcc
+     log CompilerRefcCc 10 runcc
      0 <- coreLift $ system runcc
        | _ => pure Nothing
 

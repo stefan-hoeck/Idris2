@@ -313,11 +313,11 @@ searchName fc rigc opts env target topty (n, ndef)
                         DCon tag arity _ => DataCon tag arity
                         TCon tag arity _ _ _ _ _ _ => TyCon tag arity
                         _ => Func
-         log "interaction.search" 5 $ "Trying " ++ show (fullname ndef)
+         log InteractionSearch 5 $ "Trying " ++ show (fullname ndef)
          nty <- nf defs env (embed ty)
          (args, appTy) <- mkArgs fc rigc env nty
-         logNF "interaction.search" 5 "Target" env target
-         logNF "interaction.search" 10 "App type" env appTy
+         logNF InteractionSearch 5 "Target" env target
+         logNF InteractionSearch 10 "App type" env appTy
          ures <- unify inSearch fc env target appTy
          let [] = constraints ures
              | _ => noResult
@@ -375,7 +375,7 @@ searchNames fc rig opts env ty topty (n :: ns)
          vis <- traverse (visible (gamma defs) (currentNS defs :: nestedNS defs)) (n :: ns)
          let visns = mapMaybe id vis
          nfty <- nf defs env ty
-         logTerm "interaction.search" 10 ("Searching " ++ show (map fst visns) ++ " for ") ty
+         logTerm InteractionSearch 10 ("Searching " ++ show (map fst visns) ++ " for ") ty
          getSuccessful fc rig opts False env ty topty
             (map (searchName fc rig opts env nfty topty) visns)
   where
@@ -564,7 +564,7 @@ makeHelper fc rig opts env letty targetty NoMore
 makeHelper fc rig opts env letty targetty (Result (locapp, ds) next)
     = do let S depth' = depth opts
              | Z => noResult
-         logTerm "interaction.search" 10 "Local app" locapp
+         logTerm InteractionSearch 10 "Local app" locapp
          let Just gendef = genExpr opts
              | Nothing => noResult
          defs <- get Ctxt
@@ -581,11 +581,11 @@ makeHelper fc rig opts env letty targetty (Result (locapp, ds) next)
          let def = App fc (Bind fc intn (Lam fc top Explicit letty) scope)
                           locapp
 
-         logTermNF "interaction.search" 10 "Binding def" env def
+         logTermNF InteractionSearch 10 "Binding def" env def
          defs <- get Ctxt
          Just ty <- lookupTyExact helpern (gamma defs)
              | Nothing => throw (InternalError "Can't happen")
-         logTermNF "interaction.search" 10 "Type of scope name" [] ty
+         logTermNF InteractionSearch 10 "Type of scope name" [] ty
 
          -- Generate a definition for the helper, but with more restrictions.
          -- Always take the first result, to avoid blowing up search space.
@@ -599,11 +599,11 @@ makeHelper fc rig opts env letty targetty (Result (locapp, ds) next)
                                                  ltor = False,
                                                  mustSplit = True } opts)
                                        helpern 0 ty
-              | _ => do log "interaction.search" 10 "No results"
+              | _ => do log InteractionSearch 10 "No results"
                         noResult
 
          let helperdef = IDef fc helpern (snd helper)
-         log "interaction.search" 10 $ "Def: " ++ show helperdef
+         log InteractionSearch 10 $ "Def: " ++ show helperdef
          pure (Result (def, helperdef :: ds) -- plus helper
                       (do next' <- next
                           makeHelper fc rig opts env letty targetty next'))
@@ -694,9 +694,9 @@ tryIntermediateRec fc rig opts env ty topty (Just rd)
          letty <- metaVar fc erased env intnty (TType fc)
          let opts' = record { inUnwrap = True,
                               recData = Nothing } opts
-         logTerm "interaction.search" 10 "Trying recursive search for" ty
-         log "interaction.search" 10 $ show !(toFullNames (recname rd))
-         logTerm "interaction.search" 10 "LHS" !(toFullNames (lhsapp rd))
+         logTerm InteractionSearch 10 "Trying recursive search for" ty
+         log InteractionSearch 10 $ show !(toFullNames (recname rd))
+         logTerm InteractionSearch 10 "LHS" !(toFullNames (lhsapp rd))
          recsearch <- tryRecursive fc rig opts' env letty topty rd
          makeHelper fc rig opts' env letty ty recsearch
   where
@@ -719,7 +719,7 @@ searchType : {vars : _} ->
              Nat -> Term vars -> Core (Search (Term vars, ExprDefs))
 searchType fc rig opts env topty (S k) (Bind bfc n b@(Pi fc' c info ty) sc)
     = do let env' : Env Term (n :: _) = b :: env
-         log "interaction.search" 10 $ "Introduced lambda, search for " ++ show sc
+         log InteractionSearch 10 $ "Introduced lambda, search for " ++ show sc
          scVal <- searchType fc rig opts env' topty k sc
          pure (map (\ (sc, ds) => (Bind bfc n (Lam fc' c info ty) sc, ds)) scVal)
 searchType {vars} fc rig opts env topty Z (Bind bfc n b@(Pi fc' c info ty) sc)
@@ -730,7 +730,7 @@ searchType {vars} fc rig opts env topty Z (Bind bfc n b@(Pi fc' c info ty) sc)
                 let n' = UN !(getArgName defs n [] vars !(nf defs env ty))
                 let env' : Env Term (n' :: _) = b :: env
                 let sc' = renameTop n' sc
-                log "interaction.search" 10 $ "Introduced lambda, search for " ++ show sc'
+                log InteractionSearch 10 $ "Introduced lambda, search for " ++ show sc'
                 scVal <- searchType fc rig opts env' topty Z sc'
                 pure (map (\ (sc, ds) =>
                              (Bind bfc n' (Lam fc' c info ty) sc, ds)) scVal))]
@@ -745,7 +745,7 @@ searchType fc rig opts env topty _ ty
                              -- First try the locals,
                              -- Then try the hints in order
                              -- Then try a recursive call
-                             log "interaction.search" 10 $ "Hints found for " ++ show n ++ " "
+                             log InteractionSearch 10 $ "Hints found for " ++ show n ++ " "
                                          ++ show allHints
                              let tries =
                                    [searchLocal fc rig opts env ty topty,
@@ -770,7 +770,7 @@ searchType fc rig opts env topty _ ty
                                           else tryInt ++ tries ++ tryRec ++ tryIntRec
                              getSuccessful fc rig opts True env ty topty allns
                      else noResult
-           _ => do logTerm "interaction.search" 10 "Searching locals only at" ty
+           _ => do logTerm InteractionSearch 10 "Searching locals only at" ty
                    let tryInt = if not (inUnwrap opts)
                                    then [tryIntermediate fc rig opts env ty topty]
                                    else []
@@ -792,7 +792,7 @@ searchHole : {auto c : Ref Ctxt Defs} ->
              Defs -> GlobalDef -> Core (Search (ClosedTerm, ExprDefs))
 searchHole fc rig opts n locs topty defs glob
     = do searchty <- normalise defs [] (type glob)
-         logTerm "interaction.search" 10 "Normalised type" searchty
+         logTerm InteractionSearch 10 "Normalised type" searchty
          searchType fc rig opts [] topty locs searchty
 
 -- Declared at the top
@@ -807,10 +807,10 @@ search fc rig opts topty n_in
                         BySearch _ _ _ => searchHole fc rig opts n
                                                    !(getArity defs [] (type gdef))
                                                    topty defs gdef
-                        _ => do log "interaction.search" 10 $ show n_in ++ " not a hole"
+                        _ => do log InteractionSearch 10 $ show n_in ++ " not a hole"
                                 throw (InternalError $ "Not a hole: " ++ show n ++ " in " ++
                                         show (map recname (recData opts)))
-              _ => do log "interaction.search" 10 $ show n_in ++ " not found"
+              _ => do log InteractionSearch 10 $ show n_in ++ " not found"
                       undefinedName fc n_in
   where
     lookupHoleName : Name -> Context ->
@@ -866,7 +866,7 @@ exprSearchOpts opts fc n_in hints
          Just (n, idx, gdef) <- lookupHoleName n_in defs
              | Nothing => undefinedName fc n_in
          lhs <- findHoleLHS !(getFullName (Resolved idx))
-         log "interaction.search" 10 $ "LHS hole data " ++ show (n, lhs)
+         log InteractionSearch 10 $ "LHS hole data " ++ show (n, lhs)
          opts' <- if getRecData opts
                      then do d <- getLHSData defs lhs
                              pure (record { recData = d } opts)

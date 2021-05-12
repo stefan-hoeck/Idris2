@@ -61,7 +61,7 @@ localHelper {vars} nest env nestdecls_in func
          let oldhints = localHints defs
 
          let nestdecls = map (updateName nest') nestdecls
-         log "elab.def.local" 20 $ show nestdecls
+         log ElabDefLocal 20 $ show nestdecls
 
          traverse_ (processDecl [] nest' env') nestdecls
          ust <- get UST
@@ -182,8 +182,8 @@ checkCaseLocal {vars} rig elabinfo nest env fc uname iname args sc expty
                          TCon t a _ _ _ _ _ _ => Ref fc (TyCon t a) iname
                          _ => Ref fc Func iname
          (app, args) <- getLocalTerm fc env name args
-         log "elab.local" 5 $ "Updating case local " ++ show uname ++ " " ++ show args
-         logTermNF "elab.local" 5 "To" env app
+         log ElabLocal 5 $ "Updating case local " ++ show uname ++ " " ++ show args
+         logTermNF ElabLocal 5 "To" env app
          let nest' = record { names $= ((uname, (Just iname, args,
                                                 (\fc, nt => app))) :: ) }
                             nest

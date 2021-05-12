@@ -222,12 +222,12 @@ buildDeps fname
                        clearCtxt; addPrimitives
                        put MD (initMetadata fname)
                        mainttc <- getTTCFileName fname "ttc"
-                       log "import" 10 $ "Reloading " ++ show mainttc ++ " from " ++ fname
+                       log Import 10 $ "Reloading " ++ show mainttc ++ " from " ++ fname
                        readAsMain mainttc
 
                        -- Load the associated metadata for interactive editing
                        mainttm <- getTTCFileName fname "ttm"
-                       log "import" 10 $ "Reloading " ++ show mainttm
+                       log Import 10 $ "Reloading " ++ show mainttm
                        readFromTTM mainttm
                        pure []
               errs => pure errs -- Error happened, give up

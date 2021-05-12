@@ -67,12 +67,12 @@ expandClause loc opts n c
          defs <- get Ctxt
          Just (Hole locs _) <- lookupDefExact (Resolved fn) (gamma defs)
             | _ => throw (GenericMsg loc "No searchable hole on RHS")
-         log "interaction.generate" 10 $ "Expression search for " ++ show (i, fn)
+         log InteractionGenerate 10 $ "Expression search for " ++ show (i, fn)
          rhs' <- exprSearchOpts opts loc (Resolved fn) []
          traverse (\rhs' =>
             do let rhsraw = dropLams locs rhs'
-               logTermNF "interaction.generate" 5 "Got clause" env lhs
-               log "interaction.generate" 5 $ "        = " ++ show rhsraw
+               logTermNF InteractionGenerate 5 "Got clause" env lhs
+               log InteractionGenerate 5 $ "        = " ++ show rhsraw
                pure [updateRHS c rhsraw]) rhs'
   where
     updateRHS : ImpClause -> RawImp -> ImpClause
@@ -172,7 +172,7 @@ mutual
   tryAllSplits loc opts n ((x, []) :: rest)
       = tryAllSplits loc opts n rest
   tryAllSplits loc opts n ((x, cs) :: rest)
-      = do log "interaction.generate" 5 $ "Splitting on " ++ show x
+      = do log InteractionGenerate 5 $ "Splitting on " ++ show x
            trySearch (do cs' <- traverse (mkSplits loc opts n) cs
                          collectClauses cs')
                      (tryAllSplits loc opts n rest)
@@ -190,7 +190,7 @@ mutual
               then noResult
               else expandClause loc opts n c)
           (do cs <- generateSplits loc opts n c
-              log "interaction.generate" 5 $ "Splits: " ++ show cs
+              log InteractionGenerate 5 $ "Splits: " ++ show cs
               tryAllSplits loc (record { mustSplit = False,
                                          doneSplit = True } opts) n cs)
 
@@ -238,7 +238,7 @@ makeDef p n
     = do Just (loc, nidx, envlen, ty) <- findTyDeclAt p
             | Nothing => noResult
          n <- getFullName nidx
-         logTerm "interaction.generate" 5 ("Searching for " ++ show n) ty
+         logTerm InteractionGenerate 5 ("Searching for " ++ show n) ty
          let opts = record { genExpr = Just (makeDefFromType (justFC loc)) }
                            (initSearchOpts True 5)
          makeDefFromType (justFC loc) opts n envlen ty

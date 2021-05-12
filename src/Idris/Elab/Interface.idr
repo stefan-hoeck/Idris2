@@ -390,15 +390,15 @@ elabInterface {vars} ifc vis env nest constraints iname params dets mcon body
              meths <- traverse (\ meth => getMethDecl env nest params meth_names
                                           (meth.count, meth.name, meth.type))
                                 meth_sigs
-             log "elab.interface" 5 $ "Method declarations: " ++ show meths
+             log ElabInterface 5 $ "Method declarations: " ++ show meths
 
              consts <- traverse (getMethDecl env nest params meth_names . (top,)) constraints
-             log "elab.interface" 5 $ "Constraints: " ++ show consts
+             log ElabInterface 5 $ "Constraints: " ++ show consts
 
              dt <- mkIfaceData vfc vis env consts iname conName params
                                   dets meths
-             log "elab.interface" 10 $ "Methods: " ++ show meths
-             log "elab.interface" 5 $ "Making interface data type " ++ show dt
+             log ElabInterface 10 $ "Methods: " ++ show meths
+             log ElabInterface 5 $ "Making interface data type " ++ show dt
              ignore $ processDecls nest env [dt]
 
     elabMethods : (conName : Name) -> List Name ->
@@ -411,7 +411,7 @@ elabInterface {vars} ifc vis env nest constraints iname params dets mcon body
                                                meth_names
                                                params) meth_sigs
              let fns = concat fnsm
-             log "elab.interface" 5 $ "Top level methods: " ++ show fns
+             log ElabInterface 5 $ "Top level methods: " ++ show fns
              traverse_ (processDecl [] nest env) fns
              traverse_ (\n => do mn <- inCurrentNS n
                                  setFlag vfc mn Inline
@@ -450,14 +450,14 @@ elabInterface {vars} ifc vis env nest constraints iname params dets mcon body
                      $ substNames vars methNameMap dty
 
              dty_imp <- bindTypeNames [] (map name tydecls ++ vars) dty
-             log "elab.interface.default" 5 $ "Default method " ++ show dn ++ " : " ++ show dty_imp
+             log ElabInterfaceDefault 5 $ "Default method " ++ show dn ++ " : " ++ show dty_imp
 
              let dtydecl = IClaim vdfc rig vis [] (MkImpTy EmptyFC EmptyFC dn dty_imp)
 
              processDecl [] nest env dtydecl
 
              cs' <- traverse (changeName dn) cs
-             log "elab.interface.default" 5 $ "Default method body " ++ show cs'
+             log ElabInterfaceDefault 5 $ "Default method body " ++ show cs'
 
              processDecl [] nest env (IDef vdfc dn cs')
              -- Reset the original context, we don't need to keep the definition
@@ -484,10 +484,10 @@ elabInterface {vars} ifc vis env nest constraints iname params dets mcon body
         changeNameTerm : Name -> RawImp -> Core RawImp
         changeNameTerm dn (IVar fc n')
             = do if n /= n' then pure (IVar fc n') else do
-                 log "ide-mode.highlight" 7 $
+                 log IdemodeHighlight 7 $
                    "elabDefault is trying to add Function: " ++ show n ++ " (" ++ show fc ++")"
                  whenJust (isConcreteFC fc) \nfc => do
-                   log "ide-mode.highlight" 7 $ "elabDefault is adding Function: " ++ show n
+                   log IdemodeHighlight 7 $ "elabDefault is adding Function: " ++ show n
                    addSemanticDecorations [(nfc, Function, Just n)]
                  pure (IVar fc dn)
         changeNameTerm dn (IApp fc f arg)
@@ -519,7 +519,7 @@ elabInterface {vars} ifc vis env nest constraints iname params dets mcon body
                                                  (map fst nconstraints)
                                                  meth_names
                                                  paramNames) nconstraints
-             log "elab.interface" 5 $ "Constraint hints from " ++ show constraints ++ ": " ++ show chints
+             log ElabInterface 5 $ "Constraint hints from " ++ show constraints ++ ": " ++ show chints
              traverse_ (processDecl [] nest env) (concatMap snd chints)
              traverse_ (\n => do mn <- inCurrentNS n
                                  setFlag vfc mn TCInline) (map fst chints)

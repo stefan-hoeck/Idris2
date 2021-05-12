@@ -220,7 +220,7 @@ equivTypes : {auto c : Ref Ctxt Defs} ->
 equivTypes ty1 ty2 =
   do let False = isErased ty1
           | _ => pure False
-     logTerm "typesearch.equiv" 10 "Candidate: " ty1
+     logTerm TypesearchEquiv 10 "Candidate: " ty1
      defs <- get Ctxt
      True <- pure (!(getArity defs [] ty1) == !(getArity defs [] ty2))
        | False => pure False
@@ -231,5 +231,5 @@ equivTypes ty1 ty2 =
                  (MkUnifyResult [] _ [] NoLazy) => pure True
                  _ => pure False)
            (\err => pure False)
-     when b $ logTerm "typesearch.equiv" 20 "Accepted: " ty1
+     when b $ logTerm TypesearchEquiv 20 "Accepted: " ty1
      pure b

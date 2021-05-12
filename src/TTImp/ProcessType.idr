@@ -45,7 +45,7 @@ processFnOpt fc True ndef (Hint d)
          target <- getRetTy defs !(nf defs [] ty)
          addHintFor fc target ndef d False
 processFnOpt fc _ ndef (Hint d)
-    = do log "elab" 5 $ "Adding local hint " ++ show !(toFullNames ndef)
+    = do log Elab 5 $ "Adding local hint " ++ show !(toFullNames ndef)
          addLocalHint ndef
 processFnOpt fc True ndef (GlobalHint a)
     = addGlobalHint ndef a
@@ -266,8 +266,8 @@ processType {vars} eopts nest env fc rig vis opts (MkImpTy tfc nameFC n_in ty_ra
 
          addNameLoc nameFC n
 
-         log "declare.type" 1 $ "Processing " ++ show n
-         log "declare.type" 5 $ "Checking type decl " ++ show n ++ " : " ++ show ty_raw
+         log DeclareType 1 $ "Processing " ++ show n
+         log DeclareType 5 $ "Checking type decl " ++ show n ++ " : " ++ show ty_raw
          idx <- resolveName n
 
          -- Check 'n' is undefined
@@ -280,7 +280,7 @@ processType {vars} eopts nest env fc rig vis opts (MkImpTy tfc nameFC n_in ty_ra
                    checkTerm idx InType (HolesOkay :: eopts) nest env
                              (IBindHere fc (PI erased) ty_raw)
                              (gType fc)
-         logTermNF "declare.type" 3 ("Type of " ++ show n) [] (abstractFullEnvType tfc env ty)
+         logTermNF DeclareType 3 ("Type of " ++ show n) [] (abstractFullEnvType tfc env ty)
 
          def <- initDef n env ty opts
          let fullty = abstractFullEnvType tfc env ty
@@ -301,7 +301,7 @@ processType {vars} eopts nest env fc rig vis opts (MkImpTy tfc nameFC n_in ty_ra
          -- level check so don't set the flag.
          unless (InCase `elem` eopts) $ setLinearCheck idx True
 
-         log "declare.type" 2 $ "Setting options for " ++ show n ++ ": " ++ show opts
+         log DeclareType 2 $ "Setting options for " ++ show n ++ ": " ++ show opts
          let name = Resolved idx
          let isNested : Name -> Bool
              isNested (Nested _ _) = True
@@ -316,12 +316,12 @@ processType {vars} eopts nest env fc rig vis opts (MkImpTy tfc nameFC n_in ty_ra
          -- Add to the interactive editing metadata
          addTyDecl fc (Resolved idx) env ty -- for definition generation
 
-         log "metadata.names" 7 $ "processType is adding ↓"
+         log MetadataNames 7 $ "processType is adding ↓"
          addNameType nameFC (Resolved idx) env ty -- for looking up types
 
          traverse_ addToSave (keys (getMetas ty))
          addToSave n
-         log "declare.type" 10 $ "Saving from " ++ show n ++ ": " ++ show (keys (getMetas ty))
+         log DeclareType 10 $ "Saving from " ++ show n ++ ": " ++ show (keys (getMetas ty))
 
          when (vis /= Private) $
               do addHashWithNames n

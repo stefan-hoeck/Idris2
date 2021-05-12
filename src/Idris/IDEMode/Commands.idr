@@ -286,7 +286,7 @@ export
 send : {auto c : Ref Ctxt Defs} -> SExpable a => File -> a -> Core ()
 send f resp
     = do let r = show (toSExp resp) ++ "\n"
-         log "ide-mode.send" 20 r
+         log IdemodeSend 20 r
          coreLift $ sendStr f $ leftPad '0' 6 (asHex (cast (length r)))
          coreLift $ sendStr f r
          coreLift $ fflush f

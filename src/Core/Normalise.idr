@@ -252,14 +252,14 @@ parameters (defs : Defs, topopts : EvalOpts)
              -- want to shortcut that second check, if we're evaluating
              -- everything, so don't let bind unless we need that log!
              let redok = redok1 || redok2
-             unless redok2 $ logC "eval.stuck" 5 $ do n' <- toFullNames n
-                                                      pure $ "Stuck function: " ++ show n'
+             unless redok2 $ logC EvalStuck 5 $ do n' <- toFullNames n
+                                                   pure $ "Stuck function: " ++ show n'
              if redok
                 then do
                    Just opts' <- useMeta (noCycles res) fc n defs topopts
                         | Nothing => pure def
                    Just opts' <- updateLimit nt n opts'
-                        | Nothing => do log "eval.stuck" 10 $ "Function " ++ show n ++ " past reduction limit"
+                        | Nothing => do log EvalStuck 10 $ "Function " ++ show n ++ " past reduction limit"
                                         pure def -- name is past reduction limit
                    evalDef env opts' meta fc
                            (multiplicity res) (definition res) (flags res) stk def
@@ -350,13 +350,13 @@ parameters (defs : Defs, topopts : EvalOpts)
               Stack free -> NF free -> List (CaseAlt args) ->
               Core (CaseResult (NF free))
     findAlt env loc opts fc stk val [] = do
-      log "eval.casetree.stuck" 2 "Ran out of alternatives"
+      log EvalCasetreeStuck 2 "Ran out of alternatives"
       pure GotStuck
     findAlt env loc opts fc stk val (x :: xs)
          = do Result val <- tryAlt env loc opts fc stk val x
                    | NoMatch => findAlt env loc opts fc stk val xs
                    | GotStuck => do
-                       logC "eval.casetree.stuck" 5 $
+                       logC EvalCasetreeStuck 5 $
                          pure $ "Got stuck matching " ++ show val ++ " against " ++ show !(toFullNames x)
                        pure GotStuck
               pure (Result val)
@@ -370,7 +370,7 @@ parameters (defs : Defs, topopts : EvalOpts)
       = do xval <- evalLocal env fc Nothing idx (varExtend x) [] loc
            -- we have not defined quote yet (it depends on eval itself) so we show the NF
            -- i.e. only the top-level constructor.
-           log "eval.casetree" 5 $ "Evaluated " ++ show name ++ " to " ++ show xval
+           log EvalCasetree 5 $ "Evaluated " ++ show name ++ " to " ++ show xval
            let loc' = updateLocal idx (varExtend x) loc xval
            findAlt env loc' opts fc stk xval alts
     evalTree env loc opts fc stk (STerm _ tm)
@@ -777,28 +777,28 @@ etaContract : {auto _ : Ref Ctxt Defs} ->
               {vars : _} -> Term vars -> Core (Term vars)
 etaContract tm = do
   defs <- get Ctxt
-  logTerm "eval.eta" 5 "Attempting to eta contract subterms of" tm
+  logTerm EvalEta 5 "Attempting to eta contract subterms of" tm
   nf <- normalise defs (mkEnv EmptyFC _) tm
-  logTerm "eval.eta" 5 "Evaluated to" nf
+  logTerm EvalEta 5 "Evaluated to" nf
   res <- mapTermM act tm
-  logTerm "eval.eta" 5 "Result of eta-contraction" res
+  logTerm EvalEta 5 "Result of eta-contraction" res
   pure res
 
    where
 
     act : {vars : _} -> Term vars -> Core (Term vars)
     act tm = do
-      logTerm "eval.eta" 10 "  Considering" tm
+      logTerm EvalEta 10 "  Considering" tm
       case tm of
         (Bind _ x (Lam _ _ _ _) (App _ fn (Local _ _ Z _))) => do
-          logTerm "eval.eta" 10 "  Shrinking candidate" fn
+          logTerm EvalEta 10 "  Shrinking candidate" fn
           let shrunk = shrinkTerm fn (DropCons SubRefl)
           case shrunk of
             Nothing => do
-              log "eval.eta" 10 "  Failure!"
+              log EvalEta 10 "  Failure!"
               pure tm
             Just tm' => do
-              logTerm "eval.eta" 10 "  Success!" tm'
+              logTerm EvalEta 10 "  Success!" tm'
               pure tm'
         _ => pure tm
 

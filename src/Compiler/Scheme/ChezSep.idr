@@ -217,7 +217,7 @@ compileToSS c chez appdir tm = do
       compdefs <- traverse (getScheme Chez.chezExtPrim Chez.chezString) cu.definitions
 
       -- write the files
-      log "compiler.scheme.chez" 3 $ "Generating code for " ++ chezLib
+      log CompilerSchemeChez 3 $ "Generating code for " ++ chezLib
       Core.writeFile (appdir </> chezLib <.> "ss") $ fastAppend $
         [header]
         ++ map snd fgndefs  -- definitions using foreign libs
@@ -271,7 +271,7 @@ compileExpr makeitso c tmpDir outputDir tm outfile = do
   logTime "++ Make SO" $ when makeitso $ do
     -- compile the support code
     when supportChanged $ do
-      log "compiler.scheme.chez" 3 $ "Compiling support"
+      log CompilerSchemeChez 3 $ "Compiling support"
       compileChezLibrary chez appDirRel (appDirRel </> "support.ss")
 
     -- compile every compilation unit
@@ -281,7 +281,7 @@ compileExpr makeitso c tmpDir outputDir tm outfile = do
     -- touch them in the right order to make the timestamps right
     -- even for the libraries that were not recompiled
     for_ chezLibs $ \lib => do
-      log "compiler.scheme.chez" 3 $ "Touching " ++ lib.name
+      log CompilerSchemeChez 3 $ "Touching " ++ lib.name
       touch (appDirRel </> lib.name <.> "so")
 
     -- compile the main program
