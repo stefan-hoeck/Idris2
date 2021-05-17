@@ -68,28 +68,6 @@ addSupportToPreamble : {auto c : Ref ESs ESSt} -> String -> String -> Core Strin
 addSupportToPreamble name code =
   addToPreamble name name code
 
-addStringIteratorToPreamble : {auto c : Ref ESs ESSt} -> Core String
-addStringIteratorToPreamble =
-  do
-    let defs = unlines $
-      [ "function __prim_stringIteratorNew(str) {"
-      , "  return 0;"
-      , "}"
-      , "function __prim_stringIteratorToString(_, str, it, f) {"
-      , "  return f(str.slice(it));"
-      , "}"
-      , "function __prim_stringIteratorNext(str, it) {"
-      , "  if (it >= str.length)"
-      , "    return {h: 0};"
-      , "  else"
-      , "    return {h: 1, a1: str.charAt(it), a2: it + 1};"
-      , "}"
-      ]
-    let name = "stringIterator"
-    let newName = esName name
-    addToPreamble name newName defs
-
-
 jsIdent : String -> String
 jsIdent s = concatMap okchar (unpack s)
   where
@@ -115,11 +93,8 @@ jsName (CaseBlock x y) = "case__" ++ jsIdent x ++ "_" ++ show y
 jsName (WithBlock x y) = "with__" ++ jsIdent x ++ "_" ++ show y
 jsName (Resolved i) = "fn__" ++ show i
 
-jsCrashExp : {auto c : Ref ESs ESSt} -> String -> Core String
-jsCrashExp message  =
-  do
-    n <- addConstToPreamble "crashExp" "x=>{throw new IdrisError(x)}"
-    pure $ n ++ "("++ message ++ ")"
+jsCrashExp : String -> String
+jsCrashExp message  = esName "crashExp(" ++ message ++ ")"
 
 toBigInt : String -> String
 toBigInt e = "BigInt(" ++ e ++ ")"
@@ -135,16 +110,13 @@ useBigInt (Signed $ P x)     = useBigInt' x
 useBigInt (Signed Unlimited) = True
 useBigInt (Unsigned x)       = useBigInt' x
 
-jsBigIntOfString : {auto c : Ref ESs ESSt} -> String -> Core String
-jsBigIntOfString x =
-  do
-    n <- addConstToPreamble "bigIntOfString" "s=>{const idx = s.indexOf('.'); return idx === -1 ? BigInt(s) : BigInt(s.slice(0, idx));}"
-    pure $ n ++ "(" ++ x ++ ")"
+jsBigIntOfString : String -> String
+jsBigIntOfString x = esName "bigIntOfString(" ++ x ++ ")"
 
-jsNumberOfString : {auto c : Ref ESs ESSt} -> String -> Core String
-jsNumberOfString x = pure $ "parseFloat(" ++ x ++ ")"
+jsNumberOfString : String -> String
+jsNumberOfString x = "parseFloat(" ++ x ++ ")"
 
-jsIntOfString : {auto c : Ref ESs ESSt} -> IntKind -> String -> Core String
+jsIntOfString : IntKind -> String -> String
 jsIntOfString k = if useBigInt k then jsBigIntOfString else jsNumberOfString
 
 nSpaces : Nat -> String
@@ -173,12 +145,8 @@ jsAnyToString s = "(''+" ++ s ++ ")"
 
 -- Valid unicode code poing range is [0,1114111], therefore,
 -- we calculate the remainder modulo 1114112 (= 17 * 2^16).
-jsCharOfInt : {auto c : Ref ESs ESSt} -> IntKind -> String -> Core String
-jsCharOfInt k e =
-  do fn <- addConstToPreamble
-             ("truncToChar")
-             ("x=>(x >= 0 && x <= 55295) || (x >= 57344 && x <= 1114111) ? x : 0")
-     pure $ "String.fromCodePoint(" ++ fn ++ "(" ++ fromInt k e ++ "))"
+jsCharOfInt : IntKind -> String -> String
+jsCharOfInt k e = esName "truncToChar(" ++ fromInt k e ++ ")"
 
 makeIntBound : {auto c : Ref ESs ESSt} ->
                (isBigInt : Bool) -> Int -> Core String
@@ -187,32 +155,17 @@ makeIntBound isBigInt bits =
       name = if isBigInt then "bigint_bound_" else "int_bound_"
    in addConstToPreamble (name ++ show bits) (f "2" ++ " ** "++ f (show bits))
 
-truncateIntWithBitMask : {auto c : Ref ESs ESSt} -> Int -> String -> Core String
+truncateIntWithBitMask : Int -> String -> String
 truncateIntWithBitMask bits e =
-  let bs = show bits
-      f  = adjInt bits
-   in do ib <- makeIntBound (useBigInt' bits) bits
-         mn <- addConstToPreamble ("int_mask_neg_" ++ bs) ("-" ++ ib)
-         mp <- addConstToPreamble ("int_mask_pos_" ++ bs) (ib ++ " - " ++ f "1")
-         pure $ concat {t = List}
-                       [ "((", ib, " & ", e, ") == " ++ ib ++ " ? "
-                       , "(", e, " | ", mn, ") : "
-                       , "(", e, " & ", mp, ")"
-                       , ")"
-                       ]
+  esName "truncSignedWithMask" ++ show bits ++ "(" ++ e ++ ")"
 
 -- We can't determine `isBigInt` from the given number of bits, since
 -- when casting from BigInt to Number we need to truncate the BigInt
 -- first, otherwise we might lose precision
-boundedInt : {auto c : Ref ESs ESSt} ->
-             (isBigInt : Bool) -> Int -> String -> Core String
+boundedInt : (isBigInt : Bool) -> Int -> String -> String
 boundedInt isBigInt bits e =
-   let name = if isBigInt then "truncToBigInt" else "truncToInt"
-    in do n  <- makeIntBound isBigInt bits
-          fn <- addConstToPreamble
-                  (name ++ show bits)
-                  ("x=>(x<(-" ++ n ++ ")||(x>=" ++ n ++ "))?x%" ++ n ++ ":x")
-          pure $ fn ++ "(" ++ e ++ ")"
+   let add = if isBigInt then "BigInt" else ""
+    in esName "truncSigned" ++ add ++ show bits ++ "(" ++ e ++ ")"
 
 boundedUInt : {auto c : Ref ESs ESSt} ->
               (isBigInt : Bool) -> Int -> String -> Core String
@@ -224,13 +177,11 @@ boundedUInt isBigInt bits e =
                   ("x=>{const m = x%" ++ n ++ ";return m>=0?m:m+" ++ n ++ "}")
           pure $ fn ++ "(" ++ e ++ ")"
 
-boundedIntOp : {auto c : Ref ESs ESSt} ->
-               Int -> String -> String -> String -> Core String
+boundedIntOp : Int -> String -> String -> String -> String
 boundedIntOp bits o lhs rhs =
   boundedInt (useBigInt' bits) bits (binOp o lhs rhs)
 
-boundedIntBitOp : {auto c : Ref ESs ESSt} ->
-                  Int -> String -> String -> String -> Core String
+boundedIntBitOp : Int -> String -> String -> String -> String
 boundedIntBitOp bits o lhs rhs = truncateIntWithBitMask bits (binOp o lhs rhs)
 
 boundedUIntOp : {auto c : Ref ESs ESSt} ->
@@ -267,12 +218,12 @@ mult :  {auto c : Ref ESs ESSt}
         -> (y : String)
         -> Core String
 mult (Just $ Signed $ P 32) x y =
-  fromBigInt <$> boundedInt True 31 (binOp "*" (toBigInt x) (toBigInt y))
+  pure $ fromBigInt $ boundedInt True 32 (binOp "*" (toBigInt x) (toBigInt y))
 
 mult (Just $ Unsigned 32)   x y =
   fromBigInt <$> boundedUInt True 32 (binOp "*" (toBigInt x) (toBigInt y))
 
-mult (Just $ Signed $ P n) x y = boundedIntOp (n-1) "*" x y
+mult (Just $ Signed $ P n) x y = pure $ boundedIntOp n "*" x y
 mult (Just $ Unsigned n)   x y = boundedUIntOp n "*" x y
 mult _                     x y = pure $ binOp "*" x y
 
@@ -295,7 +246,7 @@ arithOp :  {auto c : Ref ESs ESSt}
         -> (x : String)
         -> (y : String)
         -> Core String
-arithOp (Just $ Signed $ P n) op x y = boundedIntOp (n-1) op x y
+arithOp (Just $ Signed $ P n) op x y = pure $ boundedIntOp n op x y
 arithOp (Just $ Unsigned n)   op x y = boundedUIntOp n op x y
 arithOp _                     op x y = pure $ binOp op x y
 
@@ -310,7 +261,7 @@ bitOp :  {auto c : Ref ESs ESSt}
       -> (x : String)
       -> (y : String)
       -> Core String
-bitOp (Just $ Signed $ P n) op x y = boundedIntBitOp (n-1) op x y
+bitOp (Just $ Signed $ P n) op x y = pure $ boundedIntBitOp n op x y
 bitOp (Just $ Unsigned 32)  op x y =
   fromBigInt <$> boundedUInt True 32 (binOp op (toBigInt x) (toBigInt y))
 bitOp (Just $ Unsigned n)   op x y = boundedUIntOp n op x y
@@ -319,8 +270,8 @@ bitOp _                     op x y = pure $ binOp op x y
 constPrimitives : {auto c : Ref ESs ESSt} -> ConstantPrimitives
 constPrimitives = MkConstantPrimitives {
     charToInt    = \k => truncInt (useBigInt k) k . jsIntOfChar k
-  , intToChar    = \k => jsCharOfInt k
-  , stringToInt  = \k,s => jsIntOfString k s >>= truncInt (useBigInt k) k
+  , intToChar    = \k => pure . jsCharOfInt k
+  , stringToInt  = \k,s => truncInt (useBigInt k) k (jsIntOfString k s)
   , intToString  = \_   => pure . jsAnyToString
   , doubleToInt  = \k => truncInt (useBigInt k) k . jsIntOfDouble k
   , intToDouble  = \k => pure . fromInt k
@@ -328,7 +279,7 @@ constPrimitives = MkConstantPrimitives {
   }
   where truncInt : (isBigInt : Bool) -> IntKind -> String -> Core String
         truncInt b (Signed Unlimited) = pure
-        truncInt b (Signed $ P n)     = boundedInt b (n-1)
+        truncInt b (Signed $ P n)     = pure . boundedInt b n
         truncInt b (Unsigned n)       = boundedUInt b n
 
         shrink : IntKind -> IntKind -> String -> String
@@ -413,11 +364,11 @@ jsOp DoubleSqrt [x] = pure $ "Math.sqrt(" ++ x ++ ")"
 jsOp DoubleFloor [x] = pure $ "Math.floor(" ++ x ++ ")"
 jsOp DoubleCeiling [x] = pure $ "Math.ceil(" ++ x ++ ")"
 
-jsOp (Cast StringType DoubleType) [x] = jsNumberOfString x
+jsOp (Cast StringType DoubleType) [x] = pure $ jsNumberOfString x
 jsOp (Cast ty StringType) [x] = pure $ jsAnyToString x
 jsOp (Cast ty ty2) [x]        = castInt constPrimitives ty ty2 x
 jsOp BelieveMe [_,_,x] = pure x
-jsOp (Crash) [_, msg] = jsCrashExp msg
+jsOp (Crash) [_, msg] = pure $ jsCrashExp msg
 
 
 readCCPart : String -> (String, String)
@@ -448,8 +399,6 @@ makeForeign n x =
           ignore $ addSupportToPreamble lib lib_code
           pure $ "const " ++ jsName n ++ " = " ++ lib ++ "_" ++ name ++ "\n"
       "stringIterator" =>
-        do
-          ignore addStringIteratorToPreamble
           case def of
             "new" => pure $ "const " ++ jsName n ++ " = __prim_stringIteratorNew;\n"
             "next" => pure $ "const " ++ jsName n ++ " = __prim_stringIteratorNext;\n"
@@ -479,8 +428,8 @@ jsPrim (NS _ (UN "prim__os")) [] =
     let oscalc = "(o => o === 'linux'?'unix':o==='win32'?'windows':o)"
     sysos <- addConstToPreamble "sysos" (oscalc ++ "(require('os').platform())")
     pure sysos
-jsPrim (NS _ (UN "void")) [_, _] = jsCrashExp $ jsString $ "Error: Executed 'void'"  -- DEPRECATED. TODO: remove when bootstrap has been updated
-jsPrim (NS _ (UN "prim__void")) [_, _] = jsCrashExp $ jsString $ "Error: Executed 'void'"
+jsPrim (NS _ (UN "void")) [_, _] = pure $ jsCrashExp $ jsString $ "Error: Executed 'void'"  -- DEPRECATED. TODO: remove when bootstrap has been updated
+jsPrim (NS _ (UN "prim__void")) [_, _] = pure $ jsCrashExp $ jsString $ "Error: Executed 'void'"
 jsPrim x args = throw $ InternalError $ "prim not implemented: " ++ (show x)
 
 tag2es : Either Int String -> String
@@ -558,13 +507,6 @@ mutual
   alt2es indent (e, b) = pure $ nSpaces indent ++ "case " ++ !(impExp2es e) ++ ": {\n" ++
                                 !(imperative2es (indent+1) b) ++ "\n" ++ nSpaces (indent+1) ++ "break; }\n"
 
-static_preamble : List String
-static_preamble =
-  [ "class IdrisError extends Error { }"
-  , "function __prim_js2idris_array(x){if(x.length ===0){return {h:0}}else{return {h:1,a1:x[0],a2: __prim_js2idris_array(x.slice(1))}}}"
-  , "function __prim_idris2js_array(x){const result = Array();while (x.h != 0) {result.push(x.a1); x = x.a2;}return result;}"
-  ]
-
 export
 compileToES : Ref Ctxt Defs -> ClosedTerm -> List String -> Core String
 compileToES c tm ccTypes =
@@ -575,5 +517,6 @@ compileToES c tm ccTypes =
     main_ <- imperative2es 0 impMain
     let main = "try{" ++ main_ ++ "}catch(e){if(e instanceof IdrisError){console.log('ERROR: ' + e.message)}else{throw e} }"
     st <- get ESs
-    let pre = showSep "\n" $ static_preamble ++ (SortedMap.values $ preamble st)
+    static_preamble <- readDataFile ("js/support.js")
+    let pre = showSep "\n" $ static_preamble :: (values $ preamble st)
     pure $ pre ++ "\n\n" ++ defs ++ main
