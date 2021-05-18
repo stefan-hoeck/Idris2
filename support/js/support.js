@@ -31,7 +31,12 @@ function __prim_stringIteratorNext(str, it) {
     return {h: 1, a1: str.charAt(it), a2: it + 1};
 }
 
+const __esPrim_idrisworld = Symbol('idrisworld')
+
 const __esPrim_crashExp = x=>{throw new IdrisError(x)}
+
+const __esPrim_sysos =
+  ((o => o === 'linux'?'unix':o==='win32'?'windows':o)(require('os').platform()));
 
 const __esPrim_bigIntOfString = s=>{
   const idx = s.indexOf('.')
@@ -48,12 +53,12 @@ const __esPrim_truncSignedWithMask = (x,mi,ma) =>
 const __esPrim_truncSigned = (x,ma) =>
   (x >= ma || x < -ma) ? x % ma : x
 
-const __esPrim_signedToUnsigned = (x,ma) => {
+const __esPrim_truncUnsigned = (x,mask,lim) => {
   if (x < 0) {
-    const x2 = x % (ma +1);
-    return x2 < 0 ? x2 + ma + 1 : x2;
+    const x2 = x % lim;
+    return x2 < 0 ? x2 + lim : x2;
   } else {
-    return x | ma;
+    return x & mask;
   }
 }
 
@@ -99,7 +104,7 @@ const __esPrim_truncSignedBigInt32 = x =>
 const _add32s = (a,b) => __esPrim_truncSigned32(a + b)
 const _sub32s = (a,b) => __esPrim_truncSigned32(a - b)
 
-const _mul32s = (a,b) => __esPrim_truncSigned32{
+const _mul32s = (a,b) => {
   const res = a * b;
   if (res <= Number.MIN_SAFE_INTEGER || res >= Number.MAX_SAFE_INTEGER) {
     return Number(__esPrim_truncSigned(BigInt(a) * BigInt(b), 0x80000000n))
@@ -122,20 +127,39 @@ const _shl64s = (a,b) => __esPrim_truncSignedWithMask64(a << b)
 const _shr64s = (a,b) => __esPrim_truncSignedWithMask64(a >> b)
 
 //Bits8
+const __esPrim_truncUnsigned8 = x =>
+  __esPrim_truncUnsigned(x,0xff,0x100)
+
+const __esPrim_truncUnsignedBigInt8 = x =>
+  Number(__esPrim_truncUnsigned(x,0xffn,0x100n))
+
 const _add8u = (a,b) => (a + b) & 0xff
-const _sub8u = (a,b) => { const res = (a - b); return res < 0 ? res + 0x100 }
+const _sub8u = (a,b) => { const res = a - b; return res < 0 ? res + 0x100 : res }
 const _mul8u = (a,b) => (a * b) & 0xff
 const _shl8u = (a,b) => (a << b) & 0xff
 const _shr8u = (a,b) => (a >> b) & 0xff
 
 //Bits16
+const __esPrim_truncUnsigned16 = x =>
+  __esPrim_truncUnsigned(x,0xffff,0x10000)
+
+const __esPrim_truncUnsignedBigInt16 = x =>
+  Number(__esPrim_truncUnsigned(x,0xffffn,0x10000n))
+
 const _add16u = (a,b) => (a + b) & 0xffff
-const _sub16u = (a,b) => { const res = (a - b); return res < 0 ? res + 0x10000 }
+const _sub16u = (a,b) => { const res = a - b; return res < 0 ? res + 0x10000 : res }
 const _mul16u = (a,b) => (a * b) & 0xffff
 const _shl16u = (a,b) => (a << b) & 0xffff
 const _shr16u = (a,b) => (a >> b) & 0xffff
 
 //Bits32
+const __esPrim_truncUnsignedBigInt32 = x =>
+  Number(__esPrim_truncUnsigned(x,0xffffffffn,0x100000000n))
+
+const __esPrim_truncUnsigned32 = x =>
+  __esPrim_truncUnsignedBigInt32(BigInt(x))
+  
+
 const _add32u = (a,b) => {
   const res = a + b
   return res > 0xffffffff ? res - 0x100000000 : res
@@ -143,28 +167,42 @@ const _add32u = (a,b) => {
 
 const _sub32u = (a,b) => {
   const res = a - b
-  return res < 0 ? res + 0x100000000
+  return res < 0 ? res + 0x100000000 : res
 }
 
-const _mul32u = (a,b) => __esPrim_truncSigned32{
+const _mul32u = (a,b) => {
   const res = a * b;
   if (res >= Number.MAX_SAFE_INTEGER) {
     return Number((BigInt(a) * BigInt(b)) & 0xffffffffn)
   } else {
-    return res > 0xffffffff ? res % 0x100000000 | res
+    return res > 0xffffffff ? res % 0x100000000 : res
   }
 }
 
 const _shl32u = (a,b) => Number((BigInt(a) << BigInt(b)) & 0xffffffffn)
 const _shr32u = (a,b) => Number((BigInt(a) >> BigInt(b)) & 0xffffffffn)
+const _and32u = (a,b) => Number((BigInt(a) & BigInt(b)))
+const _or32u = (a,b) => Number((BigInt(a) | BigInt(b)))
+const _xor32u = (a,b) => Number((BigInt(a) ^ BigInt(b)))
 
 //Bits64
+const __esPrim_truncUnsignedBigInt64 = x =>
+  __esPrim_truncUnsigned(x,0xffffffffffffffffn,0x10000000000000000n)
+
 const _add64u = (a,b) => (a + b) & 0xffffffffffffffffn
 const _mul64u = (a,b) => (a * b) & 0xffffffffffffffffn
 const _shl64u = (a,b) => (a << b) & 0xffffffffffffffffn
 const _shr64u = (a,b) => (a >> b) & 0xffffffffffffffffn
 
 const _sub64u = (a,b) => {
-  const res = (a - b);
-  return res < 0 ? res + 0x10000000000000000n
+  const res = a - b;
+  return res < 0 ? res + 0x10000000000000000n : res
+}
+
+//String
+const __esPrim_strReverse = x => x.split('').reverse().join('')
+
+const __esPrim_substr = (o,l,x) => {
+  const on = Number(o)
+  return x.slice(on, on + Number(l))
 }

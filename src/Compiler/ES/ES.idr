@@ -57,13 +57,6 @@ addToPreamble name newName def =
                          ++ name ++ "<|" ++ x ++"|> <|"++ def ++ "|>"
          else pure newName
 
-addConstToPreamble : {auto c : Ref ESs ESSt} -> String -> String -> Core String
-addConstToPreamble name def =
-  do
-    let newName = esName name
-    let v = "const " ++ newName ++ " = (" ++ def ++ ");"
-    addToPreamble name newName v
-
 addSupportToPreamble : {auto c : Ref ESs ESSt} -> String -> String -> Core String
 addSupportToPreamble name code =
   addToPreamble name name code
@@ -148,46 +141,30 @@ jsAnyToString s = "(''+" ++ s ++ ")"
 jsCharOfInt : IntKind -> String -> String
 jsCharOfInt k e = esName "truncToChar(" ++ fromInt k e ++ ")"
 
-makeIntBound : {auto c : Ref ESs ESSt} ->
-               (isBigInt : Bool) -> Int -> Core String
-makeIntBound isBigInt bits =
-  let f    = if isBigInt then toBigInt else id
-      name = if isBigInt then "bigint_bound_" else "int_bound_"
-   in addConstToPreamble (name ++ show bits) (f "2" ++ " ** "++ f (show bits))
-
-truncateIntWithBitMask : Int -> String -> String
-truncateIntWithBitMask bits e =
-  esName "truncSignedWithMask" ++ show bits ++ "(" ++ e ++ ")"
+op : (name : String) -> (args : List String) -> String
+op n as = n ++ "(" ++ (fastConcat $ intersperse "," as) ++ ")"
 
 -- We can't determine `isBigInt` from the given number of bits, since
 -- when casting from BigInt to Number we need to truncate the BigInt
 -- first, otherwise we might lose precision
-boundedInt : (isBigInt : Bool) -> Int -> String -> String
-boundedInt isBigInt bits e =
+truncateSigned : (isBigInt : Bool) -> Int -> String -> String
+truncateSigned isBigInt bits e =
    let add = if isBigInt then "BigInt" else ""
-    in esName "truncSigned" ++ add ++ show bits ++ "(" ++ e ++ ")"
+    in op (esName "truncSigned" ++ add ++ show bits) [e]
 
-boundedUInt : {auto c : Ref ESs ESSt} ->
-              (isBigInt : Bool) -> Int -> String -> Core String
-boundedUInt isBigInt bits e =
-   let name = if isBigInt then "truncToUBigInt" else "truncToUInt"
-    in do n  <- makeIntBound isBigInt bits
-          fn <- addConstToPreamble
-                  (name ++ show bits)
-                  ("x=>{const m = x%" ++ n ++ ";return m>=0?m:m+" ++ n ++ "}")
-          pure $ fn ++ "(" ++ e ++ ")"
+truncateUnsigned : (isBigInt : Bool) -> Int -> String -> String
+truncateUnsigned isBigInt bits e =
+   let add = if isBigInt then "BigInt" else ""
+    in op (esName "truncUnsigned" ++ add ++ show bits) [e]
+
+boundedOp : (suffix : String) -> Int -> String -> String -> String -> String
+boundedOp s bits o x y = op (fastConcat ["_", o, show bits, s]) [x,y]
 
 boundedIntOp : Int -> String -> String -> String -> String
-boundedIntOp bits o lhs rhs =
-  boundedInt (useBigInt' bits) bits (binOp o lhs rhs)
+boundedIntOp = boundedOp "s"
 
-boundedIntBitOp : Int -> String -> String -> String -> String
-boundedIntBitOp bits o lhs rhs = truncateIntWithBitMask bits (binOp o lhs rhs)
-
-boundedUIntOp : {auto c : Ref ESs ESSt} ->
-                Int -> String -> String -> String -> Core String
-boundedUIntOp bits o lhs rhs =
-  boundedUInt (useBigInt' bits) bits (binOp o lhs rhs)
+boundedUIntOp : Int -> String -> String -> String -> String
+boundedUIntOp = boundedOp "u"
 
 boolOp : String -> String -> String -> String
 boolOp o lhs rhs = "(" ++ binOp o lhs rhs ++ " ? BigInt(1) : BigInt(0))"
@@ -202,70 +179,31 @@ jsConstant (BI i) = pure $ show i ++ "n"
 jsConstant (Str s) = pure $ jsString s
 jsConstant (Ch c) = pure $ jsString $ Data.Strings.singleton c
 jsConstant (Db f) = pure $ show f
-jsConstant WorldVal = addConstToPreamble "idrisworld" "Symbol('idrisworld')";
+jsConstant WorldVal = pure $ esName "idrisworld"
 jsConstant (B8 i) = pure $ show i
 jsConstant (B16 i) = pure $ show i
 jsConstant (B32 i) = pure $ show i
 jsConstant (B64 i) = pure $ show i ++ "n"
 jsConstant ty = throw (InternalError $ "Unsuported constant " ++ show ty)
 
--- For multiplication of 32bit integers (signed or unsigned),
--- we go via BigInt and back, otherwise the calculation is
--- susceptible to rounding error, since we might exceed `MAX_SAFE_INTEGER`.
-mult :  {auto c : Ref ESs ESSt}
-        -> Maybe IntKind
-        -> (x : String)
-        -> (y : String)
-        -> Core String
-mult (Just $ Signed $ P 32) x y =
-  pure $ fromBigInt $ boundedInt True 32 (binOp "*" (toBigInt x) (toBigInt y))
-
-mult (Just $ Unsigned 32)   x y =
-  fromBigInt <$> boundedUInt True 32 (binOp "*" (toBigInt x) (toBigInt y))
-
-mult (Just $ Signed $ P n) x y = pure $ boundedIntOp n "*" x y
-mult (Just $ Unsigned n)   x y = boundedUIntOp n "*" x y
-mult _                     x y = pure $ binOp "*" x y
-
-div :  {auto c : Ref ESs ESSt}
-       -> Maybe IntKind
-       -> (x : String)
-       -> (y : String)
-       -> Core String
+div : Maybe IntKind -> (x : String) -> (y : String) -> String
 div (Just k) x y =
-  if useBigInt k then pure $ binOp "/" x y
-                 else pure $ jsIntOfDouble k (x ++ " / " ++ y)
-div Nothing x y = pure $ binOp "/" x y
+  if useBigInt k then binOp "/" x y
+                 else jsIntOfDouble k (x ++ " / " ++ y)
+div Nothing x y = binOp "/" x y
 
 -- Creates the definition of a binary arithmetic operation.
 -- Rounding / truncation behavior is determined from the
 -- `IntKind`.
-arithOp :  {auto c : Ref ESs ESSt}
-        -> Maybe IntKind
+arithOp :  Maybe IntKind
+        -> (sym : String)
         -> (op : String)
         -> (x : String)
         -> (y : String)
-        -> Core String
-arithOp (Just $ Signed $ P n) op x y = pure $ boundedIntOp n op x y
-arithOp (Just $ Unsigned n)   op x y = boundedUIntOp n op x y
-arithOp _                     op x y = pure $ binOp op x y
-
--- Same as `arithOp` but for bitwise operations that might
--- go out of the valid range.
--- Note: Bitwise operations on `Number` work correctly for
--- 32bit *signed* integers. For `Bits32` we therefore go via `BigInt`
--- in order not having to deal with all kinds of negativity nastiness.
-bitOp :  {auto c : Ref ESs ESSt}
-      -> Maybe IntKind
-      -> (op : String)
-      -> (x : String)
-      -> (y : String)
-      -> Core String
-bitOp (Just $ Signed $ P n) op x y = pure $ boundedIntBitOp n op x y
-bitOp (Just $ Unsigned 32)  op x y =
-  fromBigInt <$> boundedUInt True 32 (binOp op (toBigInt x) (toBigInt y))
-bitOp (Just $ Unsigned n)   op x y = boundedUIntOp n op x y
-bitOp _                     op x y = pure $ binOp op x y
+        -> String
+arithOp (Just $ Signed $ P n) _   op = boundedIntOp n op
+arithOp (Just $ Unsigned n)   _   op = boundedUIntOp n op
+arithOp _                     sym _  = binOp sym
 
 constPrimitives : {auto c : Ref ESs ESSt} -> ConstantPrimitives
 constPrimitives = MkConstantPrimitives {
@@ -279,8 +217,8 @@ constPrimitives = MkConstantPrimitives {
   }
   where truncInt : (isBigInt : Bool) -> IntKind -> String -> Core String
         truncInt b (Signed Unlimited) = pure
-        truncInt b (Signed $ P n)     = pure . boundedInt b n
-        truncInt b (Unsigned n)       = boundedUInt b n
+        truncInt b (Signed $ P n)     = pure . truncateSigned b n
+        truncInt b (Unsigned n)       = pure . truncateUnsigned b n
 
         shrink : IntKind -> IntKind -> String -> String
         shrink k1 k2 = case (useBigInt k1, useBigInt k2) of
@@ -319,19 +257,19 @@ constPrimitives = MkConstantPrimitives {
 
 jsOp : {0 arity : Nat} -> {auto c : Ref ESs ESSt} ->
        PrimFn arity -> Vect arity String -> Core String
-jsOp (Add ty) [x, y] = arithOp (intKind ty) "+" x y
-jsOp (Sub ty) [x, y] = arithOp (intKind ty) "-" x y
-jsOp (Mul ty) [x, y] = mult (intKind ty) x y
-jsOp (Div ty) [x, y] = div (intKind ty) x y
+jsOp (Add ty) [x, y] = pure $ arithOp (intKind ty) "+" "add" x y
+jsOp (Sub ty) [x, y] = pure $ arithOp (intKind ty) "-" "sub" x y
+jsOp (Mul ty) [x, y] = pure $ arithOp (intKind ty) "*" "mul" x y
+jsOp (Div ty) [x, y] = pure $ div (intKind ty) x y
 jsOp (Mod ty) [x, y] = pure $ binOp "%" x y
 jsOp (Neg ty) [x] = pure $ "(-(" ++ x ++ "))"
 jsOp (ShiftL Int32Type) [x, y] = pure $ binOp "<<" x y
-jsOp (ShiftL ty) [x, y] = bitOp (intKind ty) "<<" x y
+jsOp (ShiftL ty) [x, y] = pure $ arithOp (intKind ty) "<<" "shl" x y
 jsOp (ShiftR Int32Type) [x, y] = pure $ binOp ">>" x y
-jsOp (ShiftR ty) [x, y] = bitOp (intKind ty) ">>" x y
-jsOp (BAnd Bits32Type) [x, y] = pure . fromBigInt $ binOp "&" (toBigInt x) (toBigInt y)
-jsOp (BOr Bits32Type) [x, y] = pure . fromBigInt $ binOp "|" (toBigInt x) (toBigInt y)
-jsOp (BXOr Bits32Type) [x, y] = pure . fromBigInt $ binOp "^" (toBigInt x) (toBigInt y)
+jsOp (ShiftR ty) [x, y] = pure $ arithOp (intKind ty) ">>" "shr" x y
+jsOp (BAnd Bits32Type) [x, y] = pure $ boundedUIntOp 32 "and" x y
+jsOp (BOr Bits32Type) [x, y]  = pure $ boundedUIntOp 32 "or" x y
+jsOp (BXOr Bits32Type) [x, y] = pure $ boundedUIntOp 32 "xor" x y
 jsOp (BAnd ty) [x, y] = pure $ binOp "&" x y
 jsOp (BOr ty) [x, y] = pure $ binOp "|" x y
 jsOp (BXOr ty) [x, y] = pure $ binOp "^" x y
@@ -346,23 +284,20 @@ jsOp StrTail [x] = pure $ "(" ++ x ++ ".slice(1))"
 jsOp StrIndex [x, y] = pure $ "(" ++ x ++ ".charAt(" ++ fromBigInt y ++ "))"
 jsOp StrCons [x, y] = pure $ binOp "+" x y
 jsOp StrAppend [x, y] = pure $ binOp "+" x y
-jsOp StrReverse [x] =
-  do
-    n <- addConstToPreamble "strReverse" "x => x.split('').reverse().join('')"
-    pure $ n ++ "(" ++ x ++ ")"
+jsOp StrReverse [x] = pure $ op (esName "strReverse") [x]
 jsOp StrSubstr [offset, length, str] =
-  pure $ str ++ ".slice(" ++ fromBigInt offset ++ ", " ++ fromBigInt offset ++ " + " ++ fromBigInt length ++ ")"
-jsOp DoubleExp [x] = pure $ "Math.exp(" ++ x ++ ")"
-jsOp DoubleLog [x] = pure $ "Math.log(" ++ x ++ ")"
-jsOp DoubleSin [x] = pure $ "Math.sin(" ++ x ++ ")"
-jsOp DoubleCos [x] = pure $ "Math.cos(" ++ x ++ ")"
-jsOp DoubleTan [x] = pure $ "Math.tan(" ++ x ++ ")"
-jsOp DoubleASin [x] = pure $ "Math.asin(" ++ x ++ ")"
-jsOp DoubleACos [x] = pure $ "Math.acos(" ++ x ++ ")"
-jsOp DoubleATan [x] = pure $ "Math.atan(" ++ x ++ ")"
-jsOp DoubleSqrt [x] = pure $ "Math.sqrt(" ++ x ++ ")"
-jsOp DoubleFloor [x] = pure $ "Math.floor(" ++ x ++ ")"
-jsOp DoubleCeiling [x] = pure $ "Math.ceil(" ++ x ++ ")"
+  pure $ op (esName "substr") [offset,length,str]
+jsOp DoubleExp [x] = pure $ op "Math.exp" [x]
+jsOp DoubleLog [x] = pure $ op "Math.log" [x]
+jsOp DoubleSin [x] = pure $ op "Math.sin" [x]
+jsOp DoubleCos [x] = pure $ op "Math.cos" [x]
+jsOp DoubleTan [x] = pure $ op "Math.tan" [x]
+jsOp DoubleASin [x] = pure $ op "Math.asin" [x]
+jsOp DoubleACos [x] = pure $ op "Math.acos" [x]
+jsOp DoubleATan [x] = pure $ op "Math.atan" [x]
+jsOp DoubleSqrt [x] = pure $ op "Math.sqrt" [x]
+jsOp DoubleFloor [x] = pure $ op "Math.floor" [x]
+jsOp DoubleCeiling [x] = pure $ op "Math.ceil" [x]
 
 jsOp (Cast StringType DoubleType) [x] = pure $ jsNumberOfString x
 jsOp (Cast ty StringType) [x] = pure $ jsAnyToString x
@@ -408,7 +343,11 @@ makeForeign n x =
 
       _ => throw (InternalError $ "invalid foreign type : " ++ ty ++ ", supported types are \"lambda\", \"support\"")
 
-foreignDecl : {auto d : Ref Ctxt Defs} -> {auto c : Ref ESs ESSt} -> Name -> List String -> Core String
+foreignDecl :  {auto d : Ref Ctxt Defs}
+            -> {auto c : Ref ESs ESSt}
+            -> Name
+            -> List String
+            -> Core String
 foreignDecl n ccs =
   do
     s <- get ESs
@@ -423,11 +362,7 @@ jsPrim (NS _ (UN "prim__writeIORef")) [_,r,v,_] = pure $ "(" ++ r ++ ".value=" +
 jsPrim (NS _ (UN "prim__newArray")) [_,s,v,_] = pure $ "(Array(Number(" ++ s ++ ")).fill(" ++ v ++ "))"
 jsPrim (NS _ (UN "prim__arrayGet")) [_,x,p,_] = pure $ "(" ++ x ++ "[" ++ p ++ "])"
 jsPrim (NS _ (UN "prim__arraySet")) [_,x,p,v,_] = pure $ "(" ++ x ++ "[" ++ p ++ "] = " ++ v ++ ")"
-jsPrim (NS _ (UN "prim__os")) [] =
-  do
-    let oscalc = "(o => o === 'linux'?'unix':o==='win32'?'windows':o)"
-    sysos <- addConstToPreamble "sysos" (oscalc ++ "(require('os').platform())")
-    pure sysos
+jsPrim (NS _ (UN "prim__os")) [] = pure $ esName "sysos"
 jsPrim (NS _ (UN "void")) [_, _] = pure $ jsCrashExp $ jsString $ "Error: Executed 'void'"  -- DEPRECATED. TODO: remove when bootstrap has been updated
 jsPrim (NS _ (UN "prim__void")) [_, _] = pure $ jsCrashExp $ jsString $ "Error: Executed 'void'"
 jsPrim x args = throw $ InternalError $ "prim not implemented: " ++ (show x)
