@@ -19,3 +19,24 @@ function support_system_directory_createDir(d){
     return 1
   }
 }
+function support_system_directory_openDir(d){
+  try{
+    return support_system_directory_fs.opendirSync(d)
+  }catch(e){
+    process.__lasterr = e;
+    return null
+  }
+}
+
+function support_system_directory_dirEntry(d){
+  try{
+    return d.readSync().name
+  }catch(e){
+    process.__lasterr = e;
+    return null
+  }
+}
+
+function support_system_directory_closeDir(d){
+  d.closeSync()
+}

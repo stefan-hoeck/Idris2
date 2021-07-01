@@ -43,8 +43,11 @@ prim__seekLine : FilePtr -> PrimIO Int
 prim__readLine : FilePtr -> PrimIO (Ptr String)
 
 %foreign support "idris2_readChars"
+         "node:support:readChars,support_system_file"
 prim__readChars : Int -> FilePtr -> PrimIO (Ptr String)
+
 %foreign "C:fgetc,libc 6"
+         "node:support:readChar,support_system_file"
 prim__readChar : FilePtr -> PrimIO Int
 
 %foreign support "idris2_writeLine"
@@ -56,13 +59,19 @@ prim__writeLine : FilePtr -> String -> PrimIO Int
 prim__eof : FilePtr -> PrimIO Int
 
 %foreign "C:fflush,libc 6"
+         "node:lambda:fp=>{require('fs').fsyncSync(fp.fd); return 0}"
 prim__flush : FilePtr -> PrimIO Int
+
 %foreign support "idris2_popen"
+         "node:lambda:x=>x"
 prim__popen : String -> String -> PrimIO FilePtr
+
 %foreign support "idris2_pclose"
+         "node:lambda:x=>x"
 prim__pclose : FilePtr -> PrimIO ()
 
 %foreign support "idris2_removeFile"
+         "node:lambda:path=>{require('fs').rmSync(path); return 0}"
 prim__removeFile : String -> PrimIO Int
 
 %foreign support "idris2_fileSize"

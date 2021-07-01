@@ -43,15 +43,18 @@ prim__changeDir : String -> PrimIO Int
 prim__createDir : String -> PrimIO Int
 
 %foreign support "idris2_openDir"
+         "node:support:openDir,support_system_directory"
 prim__openDir : String -> PrimIO DirPtr
 
 %foreign support "idris2_closeDir"
+         "node:support:closeDir,support_system_directory"
 prim__closeDir : DirPtr -> PrimIO ()
 
 %foreign support "idris2_removeDir"
 prim__removeDir : String -> PrimIO ()
 
 %foreign support "idris2_nextDirEntry"
+         "node:support:dirEntry,support_system_directory"
 prim__dirEntry : DirPtr -> PrimIO (Ptr String)
 
 export

@@ -55,44 +55,44 @@ import Network.Socket.Data
 
 %default covering
 
-%foreign "C:fdopen,libc 6"
-prim__fdopen : Int -> String -> PrimIO AnyPtr
+--                         %foreign "C:fdopen,libc 6"
+-- prim__fdopen : Int -> String -> PrimIO AnyPtr
 
-export
-socketToFile : Socket -> IO (Either String File)
-socketToFile (MkSocket f _ _ _) = do
-  file <- FHandle <$> primIO (prim__fdopen f "r+")
-  if !(fileError file)
-    then pure (Left "Failed to fdopen socket file descriptor")
-    else pure (Right file)
+-- export
+-- socketToFile : Socket -> IO (Either String File)
+-- socketToFile (MkSocket f _ _ _) = do
+--  file <- FHandle <$> primIO (prim__fdopen f "r+")
+--  if !(fileError file)
+--    then pure (Left "Failed to fdopen socket file descriptor")
+--    else pure (Right file)
 
-export
-initIDESocketFile : String -> Int -> IO (Either String File)
-initIDESocketFile h p = do
-  osock <- socket AF_INET Stream 0
-  case osock of
-    Left fail => do
-      putStrLn (show fail)
-      putStrLn "Failed to open socket"
-      exitWith (ExitFailure 1)
-    Right sock => do
-      res <- bind sock (Just (Hostname h)) p
-      if res /= 0
-        then pure (Left ("Failed to bind socket with error: " ++ show res))
-        else
-          do res <- listen sock
-             if res /= 0
-                then
-                  pure (Left ("Failed to listen on socket with error: " ++ show res))
-               else
-                 do putStrLn (show p)
-                    fflush stdout
-                    res <- accept sock
-                    case res of
-                      Left err =>
-                         pure (Left ("Failed to accept on socket with error: " ++ show err))
-                      Right (s, _) =>
-                         socketToFile s
+-- export
+-- initIDESocketFile : String -> Int -> IO (Either String File)
+-- initIDESocketFile h p = do
+--   osock <- socket AF_INET Stream 0
+--   case osock of
+--     Left fail => do
+--       putStrLn (show fail)
+--       putStrLn "Failed to open socket"
+--       exitWith (ExitFailure 1)
+--     Right sock => do
+--       res <- bind sock (Just (Hostname h)) p
+--       if res /= 0
+--         then pure (Left ("Failed to bind socket with error: " ++ show res))
+--         else
+--           do res <- listen sock
+--              if res /= 0
+--                 then
+--                   pure (Left ("Failed to listen on socket with error: " ++ show res))
+--                else
+--                  do putStrLn (show p)
+--                     fflush stdout
+--                     res <- accept sock
+--                     case res of
+--                       Left err =>
+--                          pure (Left ("Failed to accept on socket with error: " ++ show err))
+--                       Right (s, _) =>
+--                          socketToFile s
 
 getChar : File -> IO Char
 getChar h = do

@@ -81,3 +81,32 @@ function support_system_file_chmod (filename, mode) {
     return 1
   }
 }
+
+function support_system_file_readChars (len, file_ptr) {
+  let ret = file_ptr.buffer
+  if (ret.length >= len) {
+    ret = ret.slice(0, len).toString('utf-8')
+    file_ptr.buffer = file_ptr.buffer.slice(len)
+  } else {
+    const readBuf = Buffer.alloc(len - ret.length)
+    const bytesRead = support_system_file_fs.readSync(file_ptr.fd, readBuf, 0, readBuf.length, null)
+    ret = Buffer.concat([ret, readBuf.slice(0, bytesRead)])
+    file_ptr.buffer = Buffer.alloc(0)
+  }
+  return ret.toString('utf-8')
+}
+
+function support_system_file_readChar (file_ptr) {
+  if (file_ptr.buffer.length > 1) {
+    const ret = file_ptr.buffer[0]
+    file_ptr.buffer = file_ptr.buffer.slice(1)
+  } else {
+    const readBuf = Buffer.alloc(1)
+    const bytesRead = support_system_file_fs.readSync(file_ptr.fd, readBuf, 0, 1, null)
+    if (bytesRead == 0) {
+      file_ptr.eof = true
+      return -1
+    }
+    return readBuf[0]
+  }
+}

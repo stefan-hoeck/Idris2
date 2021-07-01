@@ -218,16 +218,16 @@ stMain cgs opts
                       then do
                        setOutput (IDEMode 0 stdin stdout)
                        replIDE {c} {u} {m}
-                     else do
-                       let (host, port) = ideSocketModeAddress opts
-                       f <- coreLift $ initIDESocketFile host port
-                       case f of
-                         Left err => do
-                           coreLift $ putStrLn err
-                           coreLift $ exitWith (ExitFailure 1)
-                         Right file => do
-                           setOutput (IDEMode 0 file file)
-                           replIDE {c} {u} {m}
+                     else pure ()
+--                       let (host, port) = ideSocketModeAddress opts
+--                       f <- coreLift $ initIDESocketFile host port
+--                       case f of
+--                         Left err => do
+--                           coreLift $ putStrLn err
+--                           coreLift $ exitWith (ExitFailure 1)
+--                         Right file => do
+--                           setOutput (IDEMode 0 file file)
+--                           replIDE {c} {u} {m}
                    else do
                        repl {c} {u} {m}
                        showTimeRecord
