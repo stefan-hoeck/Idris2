@@ -128,7 +128,7 @@ namespace Functor
 ||| `(>>=)` for pairs whose first value is a `Semigroup`, while
 ||| for `pure` we'd need a `Monoid`.
 public export
-interface Functor f => Apply f where
+interface Functor f => SemiApplicative f where
   constructor MkApply
   (<*>) : f (a -> b) -> f a -> f b
 

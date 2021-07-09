@@ -73,12 +73,21 @@ Apply (General a b) where
   gf <*> gv = bind gf (\ f => map (f $) gv)
 
 public export
-Applicative (General a b) where
+Bind (General a b) where
+  (>>=) = bind
+
+public export
+Lift (General a b) where
   pure = Tell
 
 public export
-Bind (General a b) where
-  (>>=) = bind
+Semiapplicative (General a b) where
+
+public export
+Applicative (General a b) where
+
+public export
+Semimonad (General a b) where
 
 public export
 Monad (General a b) where

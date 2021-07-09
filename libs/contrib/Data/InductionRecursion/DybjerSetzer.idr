@@ -60,12 +60,21 @@ Apply (Code i) where
   cf <*> co = bind cf (\ f => map (f $) co)
 
 public export
-Applicative (Code i) where
+Lift (Code i) where
   pure = Yield
 
 public export
 Bind (Code i) where
   (>>=) = bind
+
+public export
+Semiapplicative (Code i) where
+
+public export
+Applicative (Code i) where
+
+public export
+Semimonad (Code i) where
 
 public export
 Monad (Code i) where

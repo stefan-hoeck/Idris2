@@ -53,15 +53,24 @@ implementation Apply f => Apply (ReaderT stateType f) where
       f' <*> a')
 
 public export
-implementation Applicative f => Applicative (ReaderT stateType f) where
-  pure x = MkReaderT (\st => pure x)
-
-public export
 implementation Bind m => Bind (ReaderT stateType m) where
   (MkReaderT f) >>= k =
     MkReaderT (\st => do v <- f st
                          let MkReaderT kv = k v
                          kv st)
+
+public export
+implementation Lift f => Lift (ReaderT stateType f) where
+  pure x = MkReaderT (\st => pure x)
+
+public export
+implementation Semiapplicative f => Semiapplicative (ReaderT stateType f) where
+
+public export
+implementation Applicative f => Applicative (ReaderT stateType f) where
+
+public export
+implementation Semimonad m => Semimonad (ReaderT stateType m) where
 
 public export
 implementation Monad m => Monad (ReaderT stateType m) where

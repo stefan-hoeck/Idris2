@@ -189,8 +189,14 @@ Apply Colist1 where
   (f ::: fs) <*> (a ::: as) = f a ::: (fs <*> as)
 
 public export
-Applicative Colist1 where
+Lift Colist1 where
   pure = repeat
+
+public export
+Semiapplicative Colist1 where
+
+public export
+Applicative Colist1 where
 
 public export
 Zippable Colist1 where

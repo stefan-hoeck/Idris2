@@ -50,8 +50,26 @@ Monad m => Apply (ParseT m) where
                             Fail i err => pure $ Fail i err
 
 public export
-Monad m => Applicative (ParseT m) where
+Lift m => Lift (ParseT m) where
     pure x = P $ \s => pure $ OK x s
+
+public export
+Monad m => Bind (ParseT m) where
+    m >>= k = P $ \s => case !(m.runParser s) of
+                             OK a s' => (k a).runParser s'
+                             Fail i err => pure $ Fail i err
+
+public export
+Monad m => Semiapplicative (ParseT m) where
+
+public export
+Monad m => Applicative (ParseT m) where
+
+public export
+Monad m => Semimonad (ParseT m) where
+
+public export
+Monad m => Monad (ParseT m) where
 
 public export
 Monad m => Alt (ParseT m) where
@@ -65,15 +83,6 @@ Monad m => Plus (ParseT m) where
 
 public export
 Monad m => Alternative (ParseT m) where
-
-public export
-Monad m => Bind (ParseT m) where
-    m >>= k = P $ \s => case !(m.runParser s) of
-                             OK a s' => (k a).runParser s'
-                             Fail i err => pure $ Fail i err
-
-public export
-Monad m => Monad (ParseT m) where
 
 public export
 MonadTrans ParseT where

@@ -90,8 +90,19 @@ Monad m => Apply (WriterT w m) where
                        pure (f a,w2)
 
 public export %inline
-Monad m => Applicative (WriterT w m) where
+Monad m => Bind (WriterT w m) where
+  m >>= k = MkWriterT \w => do (a,w1) <- unWriterT m w
+                               unWriterT (k a) w1
+
+public export %inline
+Lift m => Lift (WriterT w m) where
   pure a = MkWriterT \w => pure (a,w)
+
+public export %inline
+Monad m => Semiapplicative (WriterT w m) where
+
+public export %inline
+Monad m => Applicative (WriterT w m) where
 
 public export %inline
 (Monad m, Alt m) => Alt (WriterT w m) where
@@ -105,9 +116,7 @@ public export %inline
 (Monad m, Plus m) => Alternative (WriterT w m) where
 
 public export %inline
-Monad m => Bind (WriterT w m) where
-  m >>= k = MkWriterT \w => do (a,w1) <- unWriterT m w
-                               unWriterT (k a) w1
+Monad m => Semimonad (WriterT w m) where
 
 public export %inline
 Monad m => Monad (WriterT w m) where

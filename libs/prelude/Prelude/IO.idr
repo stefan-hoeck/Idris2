@@ -26,13 +26,25 @@ Apply IO where
 
 %inline
 public export
-Applicative IO where
+Lift IO where
   pure x = io_pure x
 
 %inline
 public export
 Bind IO where
   b >>= k = io_bind b k
+
+%inline
+public export
+Semiapplicative IO where
+
+%inline
+public export
+Applicative IO where
+
+%inline
+public export
+Semimonad IO where
 
 %inline
 public export

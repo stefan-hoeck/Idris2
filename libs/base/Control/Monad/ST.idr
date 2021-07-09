@@ -27,7 +27,7 @@ Apply (ST s) where
   MkST f <*> MkST a = MkST $ f <*> a
 
 export
-Applicative (ST s) where
+Lift (ST s) where
   pure = MkST . pure
 
 export
@@ -36,6 +36,15 @@ Bind (ST s) where
       = MkST $ do p' <- p
                   let MkST kp = k p'
                   kp
+
+export
+Semiapplicative (ST s) where
+
+export
+Semimonad (ST s) where
+
+export
+Applicative (ST s) where
 
 export
 Monad (ST s) where

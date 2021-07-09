@@ -38,8 +38,11 @@ Apply (Tree n) where
   Node fl fr <*> Node xl xr = Node (fl <*> xl) (fr <*> xr)
 
 public export
-{n : _} -> Applicative (Tree n) where
+{n : _} -> Lift (Tree n) where
   pure = replicate n
+
+public export
+{n : _} -> Applicative (Tree n) where
 
 public export
 data Path : Nat -> Type where

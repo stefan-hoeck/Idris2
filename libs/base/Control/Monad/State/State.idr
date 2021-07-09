@@ -72,6 +72,10 @@ implementation Functor f => Functor (StateT stateType f) where
     map f (ST g) = ST (\st => map (map f) (g st)) where
 
 public export
+implementation Lift f => Lift (StateT stateType f) where
+    pure x = ST (\st => pure (st, x))
+
+public export
 implementation Monad f => Apply (StateT stateType f) where
     (ST f) <*> (ST a)
         = ST (\st =>
@@ -80,16 +84,21 @@ implementation Monad f => Apply (StateT stateType f) where
                    pure (t, g b))
 
 public export
-implementation Monad f => Applicative (StateT stateType f) where
-    pure x = ST (\st => pure (st, x))
-
-public export
 implementation Monad m => Bind (StateT stateType m) where
     (ST f) >>= k
         = ST (\st =>
                 do (st', v) <- f st
                    let ST kv = k v
                    kv st')
+
+public export
+implementation Monad f => Semiapplicative (StateT stateType f) where
+
+public export
+implementation Monad m => Semimonad (StateT stateType m) where
+
+public export
+implementation Monad f => Applicative (StateT stateType f) where
 
 public export
 implementation Monad m => Monad (StateT stateType m) where

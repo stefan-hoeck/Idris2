@@ -56,10 +56,13 @@ Semigroup e => Apply (Validated e) where
   Invalid e  <*> Valid _    = Invalid e
   Valid _    <*> Invalid e  = Invalid e
 
+public export
+Lift (Validated e) where
+  pure = Valid
+
 ||| Applicative composition preserves invalidity sequentially accumulating all errors.
 public export
 Semigroup e => Applicative (Validated e) where
-  pure = Valid
 
 -- There is no `Monad` implementation because it can't be coherent with the accumulating `Applicative` one.
 

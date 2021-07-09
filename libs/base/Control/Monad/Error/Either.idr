@@ -121,12 +121,21 @@ Apply m => Apply (EitherT e m) where
   f <*> x = MkEitherT $ (<*>) <$> runEitherT f <*> runEitherT x
 
 public export
-Applicative m => Applicative (EitherT e m) where
+Lift m => Lift (EitherT e m) where
   pure = MkEitherT . pure . Right
 
 public export
 Monad m => Bind (EitherT e m) where
   x >>= k = MkEitherT $ runEitherT x >>= either (pure . Left) (runEitherT . k)
+
+public export
+Applicative m => Semiapplicative (EitherT e m) where
+
+public export
+Applicative m => Applicative (EitherT e m) where
+
+public export
+Monad m => Semimonad (EitherT e m) where
 
 public export
 Monad m => Monad (EitherT e m) where

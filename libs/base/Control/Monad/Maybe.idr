@@ -60,13 +60,13 @@ mapMaybeT f = MkMaybeT . f . runMaybeT
 ||| Analogous to Just, aka pure for MaybeT
 public export
 %inline
-just : Applicative m => a -> MaybeT m a
+just : Lift m => a -> MaybeT m a
 just = MkMaybeT . pure . Just
 
 ||| Analogous to Nothing, aka empty for MaybeT
 public export
 %inline
-nothing : Applicative m => MaybeT m a
+nothing : Lift m => MaybeT m a
 nothing = MkMaybeT $ pure Nothing
 
 -------------------------------------------------
@@ -122,12 +122,21 @@ Apply m => Apply (MaybeT m) where
   MkMaybeT f <*> MkMaybeT x = MkMaybeT $ (<*>) <$> f <*> x
 
 public export
-Applicative m => Applicative (MaybeT m) where
+Monad m => Bind (MaybeT m) where
+  MkMaybeT x >>= k = MkMaybeT $ x >>= maybe (pure Nothing) (runMaybeT . k)
+
+public export
+Lift m => Lift (MaybeT m) where
   pure = just
 
 public export
-Monad m => Bind (MaybeT m) where
-  MkMaybeT x >>= k = MkMaybeT $ x >>= maybe (pure Nothing) (runMaybeT . k)
+Semiapplicative m => Semiapplicative (MaybeT m) where
+
+public export
+Applicative m => Applicative (MaybeT m) where
+
+public export
+Monad m => Semimonad (MaybeT m) where
 
 public export
 Monad m => Monad (MaybeT m) where

@@ -101,12 +101,21 @@ Apply io => Apply (L io) where
         PureW (f' a')
 
 export
-Applicative io => Applicative (L io) where
+(Applicative m, LinearBind m) => Bind (L m) where
+  (>>=) a k = Bind a k
+
+export
+Lift (L io) where
   pure = PureW
 
 export
-(Applicative m, LinearBind m) => Bind (L m) where
-  (>>=) a k = Bind a k
+Applicative io => Semiapplicative (L io) where
+
+export
+Applicative io => Applicative (L io) where
+
+export
+(Applicative m, LinearBind m) => Semimonad (L m) where
 
 export
 (Applicative m, LinearBind m) => Monad (L m) where

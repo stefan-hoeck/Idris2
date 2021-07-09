@@ -39,12 +39,21 @@ Apply (Morphism r) where
   (Mor f) <*> (Mor a) = Mor $ \r => f r $ a r
 
 export
-Applicative (Morphism r) where
+Bind (Morphism r) where
+  (Mor h) >>= f = Mor $ \r => applyMor (f $ h r) r
+
+export
+Lift (Morphism r) where
   pure a = Mor $ const a
 
 export
-Bind (Morphism r) where
-  (Mor h) >>= f = Mor $ \r => applyMor (f $ h r) r
+Semiapplicative (Morphism r) where
+
+export
+Applicative (Morphism r) where
+
+export
+Semimonad (Morphism r) where
 
 export
 Monad (Morphism r) where
@@ -74,14 +83,23 @@ Apply f => Apply (Kleislimorphism f a) where
   (Kleisli f) <*> (Kleisli a) = Kleisli $ \r => f r <*> a r
 
 export
-Applicative f => Applicative (Kleislimorphism f a) where
-  pure a = Kleisli $ const $ pure a
-
-export
 Bind f => Bind (Kleislimorphism f a) where
   (Kleisli f) >>= g = Kleisli $ \r => do
     k1 <- f r
     applyKleisli (g k1) r
+
+export
+Lift f => Lift (Kleislimorphism f a) where
+  pure a = Kleisli $ const $ pure a
+
+export
+Semiapplicative f => Semiapplicative (Kleislimorphism f a) where
+
+export
+Applicative f => Applicative (Kleislimorphism f a) where
+
+export
+Semimonad f => Semimonad (Kleislimorphism f a) where
 
 export
 Monad f => Monad (Kleislimorphism f a) where

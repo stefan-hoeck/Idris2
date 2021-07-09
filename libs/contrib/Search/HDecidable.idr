@@ -74,8 +74,25 @@ Apply HDec where
     = yes (prff Oh (prfx Oh))
 
 public export
-Applicative HDec where
+Lift HDec where
   pure = yes
+
+public export
+Bind HDec where
+  MkHDec True x >>= f = f (x Oh)
+  _ >>= _ = no
+
+public export
+Semiapplicative HDec where
+
+public export
+Applicative HDec where
+
+public export
+Semimonad HDec where
+
+public export
+Monad HDec where
 
 ||| Lazy in the second argument
 public export
@@ -89,14 +106,6 @@ Plus HDec where
 
 public export
 Alternative HDec where
-
-public export
-Bind HDec where
-  MkHDec True x >>= f = f (x Oh)
-  _ >>= _ = no
-
-public export
-Monad HDec where
 
 public export
 Show f => Show (HDec f) where

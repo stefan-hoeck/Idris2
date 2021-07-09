@@ -89,8 +89,14 @@ Semigroup a => Apply (Const a) where
   MkConst x <*> MkConst y = MkConst (x <+> y)
 
 public export
-Monoid a => Applicative (Const a) where
+Monoid a => Lift (Const a) where
   pure _ = MkConst neutral
+
+public export
+Semigroup a => Semiapplicative (Const a) where
+
+public export
+Monoid a => Applicative (Const a) where
 
 public export
 Foldable (Const a) where

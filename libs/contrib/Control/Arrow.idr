@@ -117,13 +117,22 @@ implementation Arrow a => Apply (ArrowMonad a) where
   (MkArrowMonad f) <*> (MkArrowMonad x) = MkArrowMonad $ f &&& x >>> arrow (uncurry id)
 
 public export
-implementation Arrow a => Applicative (ArrowMonad a) where
+implementation Arrow a => Lift (ArrowMonad a) where
   pure x = MkArrowMonad $ arrow $ \_ => x
 
 public export
 implementation ArrowApply a => Bind (ArrowMonad a) where
   (MkArrowMonad m) >>= f =
     MkArrowMonad $ m >>> (arrow $ \x => (runArrowMonad (f x), ())) >>> app
+
+public export
+implementation Arrow a => Semiapplicative (ArrowMonad a) where
+
+public export
+implementation Arrow a => Applicative (ArrowMonad a) where
+
+public export
+implementation ArrowApply a => Semimonad (ArrowMonad a) where
 
 public export
 implementation ArrowApply a => Monad (ArrowMonad a) where

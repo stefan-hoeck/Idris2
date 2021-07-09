@@ -862,8 +862,17 @@ implementation Bind (Vect k) where
     m >>= f = diag (map f m)
 
 public export
-implementation {k : Nat} -> Applicative (Vect k) where
+implementation {k : Nat} -> Lift (Vect k) where
     pure = replicate _
+
+public export
+implementation Semiapplicative (Vect k) where
+
+public export
+implementation {k : Nat} -> Applicative (Vect k) where
+
+public export
+implementation Semimonad (Vect k) where
 
 -- ||| This monad is different from the List monad, (>>=)
 -- ||| uses the diagonal.

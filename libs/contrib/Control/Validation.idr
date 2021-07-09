@@ -70,14 +70,23 @@ Monad m => Apply (ValidatorT m a) where
     f <*> a = MkValidator (\x => validateT f x <*> validateT a x)
 
 export
-Monad m => Applicative (ValidatorT m a) where
-    pure a = MkValidator (const $ pure a)
-
-export
 Monad m => Bind (ValidatorT m a) where
     v >>= f = MkValidator $ \x => do
         r <- validateT v x
         validateT (f r) x
+
+export
+Lift m => Lift (ValidatorT m a) where
+    pure a = MkValidator (const $ pure a)
+
+export
+Monad m => Semiapplicative (ValidatorT m a) where
+
+export
+Monad m => Applicative (ValidatorT m a) where
+
+export
+Monad m => Semimonad (ValidatorT m a) where
 
 export
 Monad m => Monad (ValidatorT m a) where

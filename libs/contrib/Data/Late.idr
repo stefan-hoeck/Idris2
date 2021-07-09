@@ -76,12 +76,21 @@ Apply Late where
   df <*> dx = bind df (\ f => map (f $) dx)
 
 public export
-Applicative Late where
+Bind Late where
+  (>>=) = bind
+
+public export
+Lift Late where
   pure = Now
 
 public export
-Bind Late where
-  (>>=) = bind
+Semiapplicative Late where
+
+public export
+Applicative Late where
+
+public export
+Semimonad Late where
 
 public export
 Monad Late where

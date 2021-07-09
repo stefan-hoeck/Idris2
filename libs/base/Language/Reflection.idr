@@ -56,12 +56,21 @@ Apply Elab where
   f <*> a = Bind f (<$> a)
 
 export
-Applicative Elab where
+Bind Elab where
+  (>>=) = Bind
+
+export
+Lift Elab where
   pure = Pure
 
 export
-Bind Elab where
-  (>>=) = Bind
+Semiapplicative Elab where
+
+export
+Applicative Elab where
+
+export
+Semimonad Elab where
 
 export
 Monad Elab where

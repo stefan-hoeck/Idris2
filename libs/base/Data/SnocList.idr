@@ -115,12 +115,20 @@ Apply SnocList where
   fs <*> xs = concatMap (flip map xs) fs
 
 public export
-Applicative SnocList where
-  pure = (:<) Lin
-
-public export
 Bind SnocList where
   xs >>= k = concatMap k xs
+
+public export
+Lift SnocList where
+
+public export
+Semiapplicative SnocList where
+
+public export
+Applicative SnocList where
+
+public export
+Semimonad SnocList where
 
 public export
 Monad SnocList where

@@ -116,8 +116,19 @@ Monad m => Apply (RWST r w s m) where
                         pure (f a,s2,w2)
 
 public export %inline
-Monad m => Applicative (RWST r w s m) where
+Monad m => Bind (RWST r w s m) where
+  m >>= k = MkRWST \r,s,w => do (a,s1,w1) <- unRWST m r s w
+                                unRWST (k a) r s1 w1
+
+public export %inline
+Lift m => Lift (RWST r w s m) where
   pure a = MkRWST \_,s,w => pure (a,s,w)
+
+public export %inline
+Monad m => Semiapplicative (RWST r w s m) where
+
+public export %inline
+Monad m => Applicative (RWST r w s m) where
 
 public export %inline
 (Monad m, Alt m) => Alt (RWST r w s m) where
@@ -131,9 +142,7 @@ public export %inline
 (Monad m, Plus m) => Alternative (RWST r w s m) where
 
 public export %inline
-Monad m => Bind (RWST r w s m) where
-  m >>= k = MkRWST \r,s,w => do (a,s1,w1) <- unRWST m r s w
-                                unRWST (k a) r s1 w1
+Monad m => Semimonad (RWST r w s m) where
 
 public export %inline
 Monad m => Monad (RWST r w s m) where

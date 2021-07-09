@@ -126,13 +126,22 @@ public export
 Apply List1 where
   f ::: fs <*> xs = appendl (map f xs) (fs <*> forget xs)
 
-public export
-Applicative List1 where
-  pure x = singleton x
-
 export
 Bind List1 where
   (x ::: xs) >>= f = appendl (f x) (xs >>= forget . f)
+
+public export
+Lift List1 where
+  pure x = singleton x
+
+public export
+Semiapplicative List1 where
+
+public export
+Applicative List1 where
+
+export
+Semimonad List1 where
 
 export
 Monad List1 where

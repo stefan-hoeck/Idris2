@@ -29,13 +29,22 @@ Apply Future where
   funcF <*> v = fork $ (await funcF) (await v)
 
 public export
-Applicative Future where
-  pure v = fork v
-
-public export
 Bind Future where
   join = map await
   v >>= func = join . fork $ func (await v)
+
+public export
+Lift Future where
+  pure v = fork v
+
+public export
+Semiapplicative Future where
+
+public export
+Applicative Future where
+
+public export
+Semimonad Future where
 
 public export
 Monad Future where

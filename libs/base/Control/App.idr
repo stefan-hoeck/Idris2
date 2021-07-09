@@ -191,12 +191,21 @@ Apply (App {l} es) where
               bindApp a $ \a' => pureApp (f' a')
 
 export
-Applicative (App {l} es) where
+Bind (App {l} es) where
+  (>>=) = bindApp -- won't get used, but handy to have the instance
+
+export
+Lift (App {l} es) where
   pure = pureApp
 
 export
-Bind (App es) where
-  (>>=) = bindApp -- won't get used, but handy to have the instance
+Semiapplicative (App {l} es) where
+
+export
+Applicative (App {l} es) where
+
+export
+Semimonad (App es) where
 
 export
 Monad (App es) where

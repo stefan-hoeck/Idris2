@@ -18,12 +18,21 @@ Apply Identity where
     (Id f) <*> (Id g) = Id (f g)
 
 public export
-Applicative Identity where
-    pure x = Id x
-
-public export
 Bind Identity where
     (Id x) >>= k = k x
+
+public export
+Lift Identity where
+    pure = Id
+
+public export
+Semiapplicative Identity where
+
+public export
+Applicative Identity where
+
+public export
+Semimonad Identity where
 
 public export
 Monad Identity where

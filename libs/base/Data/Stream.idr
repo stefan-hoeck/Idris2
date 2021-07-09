@@ -172,12 +172,21 @@ Apply Stream where
   (<*>) = zipWith apply
 
 export
-Applicative Stream where
+Bind Stream where
+  s >>= f = diag (map f s)
+
+export
+Lift Stream where
   pure = repeat
 
 export
-Bind Stream where
-  s >>= f = diag (map f s)
+Semiapplicative Stream where
+
+export
+Applicative Stream where
+
+export
+Semimonad Stream where
 
 export
 Monad Stream where

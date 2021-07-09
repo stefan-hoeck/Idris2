@@ -111,8 +111,24 @@ Apply LazyList where
   fs <*> vs = bindLazy (\f => map f vs) fs
 
 public export
-Applicative LazyList where
+Lift LazyList where
   pure x = [x]
+
+public export
+Bind LazyList where
+  m >>= f = bindLazy f m
+
+public export
+Semiapplicative LazyList where
+
+public export
+Applicative LazyList where
+
+public export
+Semimonad LazyList where
+
+public export
+Monad LazyList where
 
 public export
 Alt LazyList where
@@ -124,13 +140,6 @@ Plus LazyList where
 
 public export
 Alternative LazyList where
-
-public export
-Bind LazyList where
-  m >>= f = bindLazy f m
-
-public export
-Monad LazyList where
 
 -- There is no Traversable instance for lazy lists.
 -- The result of a traversal will be a non-lazy list in general
