@@ -556,8 +556,8 @@ parameters (schExtPrim : Int -> ExtPrim -> List NamedCExp -> Core String,
         = schOp op !(schArgs i args)
     schExp i (NmExtPrim fc p args)
         = schExtPrim i (toPrim p) args
-    schExp i (NmForce fc lr t) = pure $ "(force " ++ !(schExp i t) ++ ")"
-    schExp i (NmDelay fc lr t) = pure $ "(delay " ++ !(schExp i t) ++ ")"
+    schExp i (NmForce fc lr t) = pure $ "(" ++ !(schExp i t) ++ ")"
+    schExp i (NmDelay fc lr t) = pure $ "(lambda () " ++ !(schExp i t) ++ ")"
     schExp i (NmConCase fc sc alts def)
         = cond [(recordCase alts, schRecordCase i sc alts def),
                 (maybeCase alts, schMaybeCase i sc alts def),
