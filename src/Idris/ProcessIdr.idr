@@ -114,7 +114,7 @@ readModule full loc vis imp as
              | True => when vis (setVisible (miAsNamespace imp))
          Right fname <- nsToPath loc imp
                | Left err => throw err
-         Just (syn, hash, more) <- readFromTTC False {extra = SyntaxInfo}
+         Just (syn, hash, more) <- logTime 10 ("Reading from TTC: " ++ fname) $ readFromTTC False {extra = SyntaxInfo}
                                                   loc vis fname imp as
               | Nothing => when vis (setVisible (miAsNamespace imp)) -- already loaded, just set visibility
          extendSyn syn
