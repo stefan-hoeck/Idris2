@@ -109,12 +109,13 @@ readModule : {auto c : Ref Ctxt Defs} ->
              (as : Namespace) -> -- Namespace to import into
              Core ()
 readModule full loc vis imp as
-    = do defs <- get Ctxt
+    = logTime 10 ("Reading module: " ++ show imp) $ do
+         defs <- get Ctxt
          let False = (imp, vis, as) `elem` map snd (allImported defs)
              | True => when vis (setVisible (miAsNamespace imp))
          Right fname <- nsToPath loc imp
                | Left err => throw err
-         Just (syn, hash, more) <- logTime 10 ("Reading from TTC: " ++ fname) $ readFromTTC False {extra = SyntaxInfo}
+         Just (syn, hash, more) <- logTime 20 ("Reading from TTC: " ++ fname) $ readFromTTC False {extra = SyntaxInfo}
                                                   loc vis fname imp as
               | Nothing => when vis (setVisible (miAsNamespace imp)) -- already loaded, just set visibility
          extendSyn syn
