@@ -109,7 +109,8 @@ readModule : {auto c : Ref Ctxt Defs} ->
              (as : Namespace) -> -- Namespace to import into
              Core ()
 readModule full loc vis imp as
-    = logTime 10 ("Reading module: " ++ show imp) $ do
+    = log "import" 1 ("Reading module: " ++ show imp) >>
+      (logTime 10 ("Reading module: " ++ show imp) $ do
          defs <- get Ctxt
          let False = (imp, vis, as) `elem` map snd (allImported defs)
              | True => when vis (setVisible (miAsNamespace imp))
@@ -128,7 +129,7 @@ readModule full loc vis imp as
                           let reexp = fst (snd mimp)
                           let as = snd (snd mimp)
                           when (reexp || full) $ readModule full loc reexp m as) more
-         setNS modNS
+         setNS modNS)
 
 readImport : {auto c : Ref Ctxt Defs} ->
              {auto u : Ref UST UState} ->
