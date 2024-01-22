@@ -193,7 +193,7 @@ stMain cgs opts
                                      readPrelude True
                                    pure Done
                       Just f => logTime 1 "Loading main file" $ do
-                                  res <- loadMainFile f
+                                  res <- loadMainFile True f
                                   displayErrors res
                                   pure res
 

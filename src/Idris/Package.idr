@@ -453,7 +453,7 @@ compileMain mainn mfilename exec
     = do modIdent <- ctxtPathToNS mfilename
          m <- newRef MD (initMetadata (PhysicalIdrSrc modIdent))
          u <- newRef UST initUState
-         ignore $ loadMainFile mfilename
+         ignore $ loadMainFile True mfilename
          ignore $ compileExp (PRef replFC mainn) exec
 
 prepareCompilation : {auto c : Ref Ctxt Defs} ->
@@ -875,7 +875,7 @@ runRepl fname = do
   case fname of
       Nothing => pure ()
       Just fn => do
-        errs <- loadMainFile fn
+        errs <- loadMainFile True fn
         displayErrors errs
   repl {u} {s}
 

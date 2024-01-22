@@ -821,11 +821,11 @@ loadMainFile : {auto c : Ref Ctxt Defs} ->
                {auto s : Ref Syn SyntaxInfo} ->
                {auto m : Ref MD Metadata} ->
                {auto o : Ref ROpts REPLOpts} ->
-               String -> Core REPLResult
-loadMainFile f
+               Bool -> String -> Core REPLResult
+loadMainFile reset f
     = do update ROpts { evalResultName := Nothing }
          modIdent <- ctxtPathToNS f
-         resetContext (PhysicalIdrSrc modIdent)
+         when reset (resetContext (PhysicalIdrSrc modIdent))
          Right res <- coreLift (readFile f)
             | Left err => do setSource ""
                              pure (ErrorLoadingFile f err)
@@ -948,11 +948,11 @@ process Reload
     = do opts <- get ROpts
          case mainfile opts of
               Nothing => pure NoFileLoaded
-              Just f => loadMainFile f
+              Just f => loadMainFile False f
 process (Load f)
     = do update ROpts { mainfile := Just f }
          -- Clear the context and load again
-         loadMainFile f
+         loadMainFile True f
 process (ImportMod m)
     = do catch (do addImport (MkImport emptyFC False m (miAsNamespace m))
                    pure $ ModuleLoaded (show m))
@@ -971,7 +971,7 @@ process Edit
               Just f =>
                 do let line = maybe [] (\i => ["+" ++ show (i + 1)]) (errorLine opts)
                    coreLift_ $ system $ [editor opts, f] ++ line
-                   loadMainFile f
+                   loadMainFile True f
 process (Compile ctm outfile)
     = compileExp ctm outfile
 process (Exec ctm)
