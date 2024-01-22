@@ -287,15 +287,16 @@ buildDeps : {auto c : Ref Ctxt Defs} ->
             {auto m : Ref MD Metadata} ->
             {auto u : Ref UST UState} ->
             {auto o : Ref ROpts REPLOpts} ->
+            Bool ->
             (mainFile : String) ->
             Core (List Error)
-buildDeps fname
+buildDeps reset fname
     = do mods <- getBuildMods EmptyFC [] fname
          log "import" 20 $ "Needs to rebuild: " ++ show mods
          ok <- buildMods EmptyFC 1 (length mods) mods
          case ok of
               [] => do -- On success, reload the main ttc in a clean context
-                       clearCtxt; addPrimitives
+                       when reset (clearCtxt >> addPrimitives)
                        modIdent <- ctxtPathToNS fname
                        put MD (initMetadata (PhysicalIdrSrc modIdent))
                        mainttc <- getTTCFileName fname "ttc"

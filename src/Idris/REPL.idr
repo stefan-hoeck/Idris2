@@ -829,7 +829,7 @@ loadMainFile reset f
          Right res <- coreLift (readFile f)
             | Left err => do setSource ""
                              pure (ErrorLoadingFile f err)
-         errs <- logTime 1 "Build deps" $ buildDeps f
+         errs <- logTime 1 "Build deps" $ buildDeps reset f
          updateErrorLine errs
          setSource res
          resetProofState
