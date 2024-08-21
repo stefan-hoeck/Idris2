@@ -232,7 +232,7 @@ getRelevantArg defs i rel world (NBind fc _ (Pi _ rig _ val) sc)
                        -- a note of this one and keep going. Otherwise, we
                        -- have more than one, so give up.
                            maybe (do sc' <- sc defs (toClosure defaultOpts [] (Erased fc Placeholder))
-                                     getRelevantArg defs (1 + i) (Just i) False sc')
+                                     getRelevantArg defs (1 + i) (Just i) world sc')
                                  (const (pure Nothing))
                                  rel)
                  rig
