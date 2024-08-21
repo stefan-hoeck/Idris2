@@ -224,7 +224,7 @@ getRelevantArg defs i rel world (NBind fc _ (Pi _ rig _ val) sc)
 
                        -- we can ignore erased placeholders, but if they are at
                        -- quantity 1, they should be treated just like %World
-                       (NErased _ Placeholder) =>
+                       (NErased _ Impossible) =>
                            getRelevantArg defs (1 + i) rel False
                                !(sc defs (toClosure defaultOpts [] (Erased fc Placeholder)))
                        _ =>
