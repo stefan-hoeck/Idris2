@@ -221,6 +221,12 @@ getRelevantArg defs i rel world (NBind fc _ (Pi _ rig _ val) sc)
                        (NPrimVal _ $ PrT WorldType) =>
                            getRelevantArg defs (1 + i) rel False
                                !(sc defs (toClosure defaultOpts [] (Erased fc Placeholder)))
+
+                       -- we can ignore erased placeholders, but if they are at
+                       -- quantity 1, they should be treated just like %World
+                       (NErased _ Placeholder) =>
+                           getRelevantArg defs (1 + i) rel (world && rig /= timesNeutral)
+                               !(sc defs (toClosure defaultOpts [] (Erased fc Placeholder)))
                        _ =>
                        -- if we haven't found a relevant argument yet, make
                        -- a note of this one and keep going. Otherwise, we
