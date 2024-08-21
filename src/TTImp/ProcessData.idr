@@ -225,14 +225,14 @@ getRelevantArg defs i rel world (NBind fc _ (Pi _ rig _ val) sc)
                        -- we can ignore erased placeholders, but if they are at
                        -- quantity 1, they should be treated just like %World
                        (NErased _ Placeholder) =>
-                           getRelevantArg defs (1 + i) rel (world && rig /= timesNeutral)
+                           getRelevantArg defs (1 + i) rel False
                                !(sc defs (toClosure defaultOpts [] (Erased fc Placeholder)))
                        _ =>
                        -- if we haven't found a relevant argument yet, make
                        -- a note of this one and keep going. Otherwise, we
                        -- have more than one, so give up.
                            maybe (do sc' <- sc defs (toClosure defaultOpts [] (Erased fc Placeholder))
-                                     getRelevantArg defs (1 + i) (Just i) world sc')
+                                     getRelevantArg defs (1 + i) (Just i) False sc')
                                  (const (pure Nothing))
                                  rel)
                  rig
