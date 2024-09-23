@@ -1,0 +1,4 @@
+. ../../testutils.sh
+
+# Previously reported: unrecognized foreign-callable argument ftype name AST
+idris2 -c FFI.idr -o out </dev/null
