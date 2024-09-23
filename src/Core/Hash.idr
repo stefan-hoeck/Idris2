@@ -416,6 +416,9 @@ Hashable ConInfo where
     ZERO => h `hashWithSalt` 8
     SUCC => h `hashWithSalt` 9
     UNIT => h `hashWithSalt` 10
+    NEWTYPE n => h `hashWithSalt` 11 `hashWithSalt` n
+    ENUMTYPE n => h `hashWithSalt` 12 `hashWithSalt` n
+    NAT => h `hashWithSalt` 13
 
 mutual
   export

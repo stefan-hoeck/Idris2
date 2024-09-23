@@ -19,6 +19,9 @@ import Libraries.Data.SnocList.SizeOf
 public export
 data ConInfo = DATACON -- normal data constructor
              | TYCON -- normal type constructor
+             | NEWTYPE Nat -- newtype wrapper
+             | ENUMTYPE Nat -- enum type with the given number of constructors
+             | NAT -- nat-shaped type such as `Nat` or `Fin n`
              | NIL -- nil of a list or option shaped thing
              | CONS -- cons of a list shaped thing
              | ENUM Nat -- part of an enumeration with the given number of constructors
@@ -33,6 +36,9 @@ export
 Show ConInfo where
   show DATACON = "[datacon]"
   show TYCON   = "[tycon]"
+  show (NEWTYPE n) = "[newtype " ++ show n ++ "]"
+  show (ENUMTYPE n) = "[enumtype " ++ show n ++ "]"
+  show NAT = "[nat]"
   show NIL     = "[nil]"
   show CONS    = "[cons]"
   show (ENUM n) = "[enum " ++ show n ++ "]"
@@ -47,6 +53,9 @@ export
 Eq ConInfo where
   DATACON == DATACON = True
   TYCON == TYCON = True
+  NEWTYPE x == NEWTYPE y = x == y
+  ENUMTYPE x == ENUMTYPE y = x == y
+  NAT == NAT = True
   NIL == NIL = True
   CONS == CONS = True
   ENUM x == ENUM y = x == y

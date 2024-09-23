@@ -638,9 +638,19 @@ nfToCFType _ s (NTCon fc n_in _ _ args)
          n <- toFullNames n_in
          case !(getNArgs defs n $ map snd args) of
               User un uargs =>
-                do nargs <- traverse (evalClosure defs) uargs
-                   cargs <- traverse (nfToCFType fc s) nargs
-                   pure (CFUser n cargs)
+                -- tries to get the runtime representation of this type
+                -- in order to still allow marshalling it via the FFI
+                dconFlag un >>= \case
+                  -- NEWTYPE k  => ?foo_2 -- TODO
+                  ENUMTYPE k =>
+                    if      k <= 0xff   then pure CFUnsigned8
+                    else if k <= 0xffff then pure CFUnsigned16
+                    else                     pure CFUnsigned32
+                  NAT        => pure CFInteger
+                  _          => do
+                    nargs <- traverse (evalClosure defs) uargs
+                    cargs <- traverse (nfToCFType fc s) nargs
+                    pure (CFUser n cargs)
               Struct n fs =>
                 do fs' <- traverse
                              (\ (n, ty) =>

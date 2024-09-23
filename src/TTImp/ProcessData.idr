@@ -237,16 +237,17 @@ getRelevantArg defs i rel world tm
 -- a newtype for optimisation
 export
 findNewtype : {auto c : Ref Ctxt Defs} ->
-              List Constructor -> Core ()
-findNewtype [con]
+              FC -> Name -> List Constructor -> Core ()
+findNewtype fc n [con]
     = do defs <- get Ctxt
          Just arg <- getRelevantArg defs 0 Nothing True !(nf defs [] (type con))
               | Nothing => pure ()
+         setFlag fc n (ConType $ NEWTYPE $ snd arg)
          updateDef (name con) $
                \case
                  DCon t a _ => Just $ DCon t a $ Just arg
                  _ => Nothing
-findNewtype _ = pure ()
+findNewtype _ _ _ = pure ()
 
 hasArgs : Nat -> Term vs -> Bool
 hasArgs (S k) (Bind _ _ (Pi _ c _ _) sc)
@@ -322,10 +323,11 @@ calcMaybe fc cs@[_, _]
 calcMaybe _ _ = pure False
 
 calcEnum : {auto c : Ref Ctxt Defs} ->
-           FC -> List Constructor -> Core Bool
-calcEnum fc cs
+           FC -> Name -> List Constructor -> Core Bool
+calcEnum fc n cs
     = if !(allM isNullary cs)
          then do traverse_ (\c => setFlag fc c (ConType (ENUM $ length cs))) (map name cs)
+                 setFlag fc n (ConType $ ENUMTYPE $ length cs)
                  pure True
          else pure False
   where
@@ -360,6 +362,7 @@ calcNaty fc tyCon cs@[_, _]
          if succArgCon == tyCon
             then do setFlag fc zero (ConType ZERO)
                     setFlag fc succ (ConType SUCC)
+                    setFlag fc tyCon (ConType NAT)
                     pure True
             else pure False
 calcNaty _ _ _ = pure False
@@ -385,7 +388,7 @@ calcConInfo fc type cons
            | True => pure ()
         False <- calcMaybe fc cons
            | True => pure ()
-        False <- calcEnum fc cons
+        False <- calcEnum fc type cons
            | True => pure ()
         False <- calcRecord fc cons
            | True => pure ()
@@ -517,7 +520,7 @@ processData {vars} eopts nest env fc def_vis mbtot (MkImpData dfc n_in mty_raw o
          -- Skip optimisation if the data type has specified `noNewtype` in its
          -- options list.
          when (not (NoNewtype `elem` opts)) $
-              findNewtype cons
+              findNewtype fc n cons
 
          -- Type is defined mutually with every data type undefined at the
          -- point it was declared, and every data type undefined right now

@@ -687,6 +687,9 @@ TTC ConInfo where
   toBuf b ZERO = tag 8
   toBuf b SUCC = tag 9
   toBuf b UNIT = tag 10
+  toBuf b (NEWTYPE n) = do tag 11; toBuf b n
+  toBuf b (ENUMTYPE n) = do tag 12; toBuf b n
+  toBuf b NAT = tag 13
 
   fromBuf b
       = case !getTag of
@@ -701,6 +704,9 @@ TTC ConInfo where
              8 => pure ZERO
              9 => pure SUCC
              10 => pure UNIT
+             11 => do n <- fromBuf b; pure (NEWTYPE n)
+             12 => do n <- fromBuf b; pure (ENUMTYPE n)
+             13 => pure NAT
              _ => corrupt "ConInfo"
 
 mutual
