@@ -453,6 +453,7 @@ addDeps pkg = do
 
 processOptions : {auto c : Ref Ctxt Defs} ->
                  {auto o : Ref ROpts REPLOpts} ->
+                 {auto _ : Ref PostS PostSession} ->
                  Maybe (FC, String) -> Core ()
 processOptions Nothing = pure ()
 processOptions (Just (fc, opts))
@@ -492,6 +493,7 @@ withWarnings op = do o <- catch op $ \err =>
 prepareCompilation : {auto c : Ref Ctxt Defs} ->
                      {auto s : Ref Syn SyntaxInfo} ->
                      {auto o : Ref ROpts REPLOpts} ->
+                     {auto _ : Ref PostS PostSession} ->
                      PkgDesc ->
                      List CLOpt ->
                      Core (List Error)
@@ -520,6 +522,7 @@ export
 build : {auto c : Ref Ctxt Defs} ->
         {auto s : Ref Syn SyntaxInfo} ->
         {auto o : Ref ROpts REPLOpts} ->
+        {auto _ : Ref PostS PostSession} ->
         PkgDesc ->
         List CLOpt ->
         Core (List Error)
@@ -695,6 +698,7 @@ export
 check : {auto c : Ref Ctxt Defs} ->
         {auto s : Ref Syn SyntaxInfo} ->
         {auto o : Ref ROpts REPLOpts} ->
+        {auto _ : Ref PostS PostSession} ->
         PkgDesc ->
         List CLOpt ->
         Core (List Error)
@@ -709,6 +713,7 @@ check pkg opts =
 makeDoc : {auto c : Ref Ctxt Defs} ->
           {auto s : Ref Syn SyntaxInfo} ->
           {auto o : Ref ROpts REPLOpts} ->
+          {auto _ : Ref PostS PostSession} ->
           PkgDesc ->
           List CLOpt ->
           Core (List Error)
@@ -942,6 +947,7 @@ localPackageFile Nothing
 processPackage : {auto c : Ref Ctxt Defs} ->
                  {auto s : Ref Syn SyntaxInfo} ->
                  {auto o : Ref ROpts REPLOpts} ->
+                 {auto _ : Ref PostS PostSession} ->
                  List CLOpt ->
                  (PkgCommand, Maybe String) ->
                  Core ()
@@ -1063,47 +1069,47 @@ errorMsg = unlines
   , "    --output-dir <dir>"
   ]
 
-export
-processPackageOpts : {auto c : Ref Ctxt Defs} ->
-                     {auto s : Ref Syn SyntaxInfo} ->
-                     {auto o : Ref ROpts REPLOpts} ->
-                     List CLOpt -> Core Bool
-processPackageOpts opts
-    = do (MkPFR cmds@(_::_) opts' err) <- pure $ partitionOpts opts
-             | (MkPFR Nil opts' _) => pure False
-         if err
-           then coreLift $ putStrLn errorMsg
-           else traverse_ (processPackage opts') cmds
-         pure True
+parameters
+  {auto c : Ref Ctxt Defs}
+  {auto s : Ref Syn SyntaxInfo}
+  {auto o : Ref ROpts REPLOpts}
+  {auto p : Ref PostS PostSession}
+
+  export
+  processPackageOpts : List CLOpt -> Core ControlFlow
+  processPackageOpts opts
+      = do (MkPFR cmds@(_::_) opts' err) <- pure $ partitionOpts opts
+               | (MkPFR Nil opts' _) => pure Continue
+           if err
+             then coreLift $ putStrLn errorMsg
+             else traverse_ (processPackage opts') cmds
+           pure Abort
 
 
--- find an ipkg file in one of the parent directories
--- If it exists, read it, set the current directory to the root of the source
--- tree, and set the relevant command line options before proceeding
-export
-findIpkg : {auto c : Ref Ctxt Defs} ->
-           {auto r : Ref ROpts REPLOpts} ->
-           {auto s : Ref Syn SyntaxInfo} ->
-           Maybe String -> Core (Maybe String)
-findIpkg fname
-   = do Just (dir, ipkgn, up) <- coreLift findIpkgFile
-             | Nothing => pure fname
-        coreLift_ $ changeDir dir
-        setWorkingDir dir
-        pkg <- parsePkgFile True ipkgn
-        maybe (pure ()) setBuildDir (builddir pkg)
-        setOutputDir (outputdir pkg)
-        processOptions (options pkg)
-        addDeps pkg
-        case fname of
-             Nothing => pure Nothing
-             Just srcpath  =>
-                do let src' = up </> srcpath
-                   setSource src'
-                   update ROpts { mainfile := Just src' }
-                   pure (Just src')
-  where
-    dropHead : String -> List String -> List String
-    dropHead str [] = []
-    dropHead str (x :: xs)
-        = if x == str then xs else x :: xs
+  -- find an ipkg file in one of the parent directories
+  -- If it exists, read it, set the current directory to the root of the source
+  -- tree, and set the relevant command line options before proceeding
+  export
+  findIpkg : Maybe String -> Core (Maybe String)
+  findIpkg fname
+     = do Just (dir, ipkgn, up) <- coreLift findIpkgFile
+               | Nothing => pure fname
+          coreLift_ $ changeDir dir
+          setWorkingDir dir
+          pkg <- parsePkgFile True ipkgn
+          maybe (pure ()) setBuildDir (builddir pkg)
+          setOutputDir (outputdir pkg)
+          processOptions (options pkg)
+          addDeps pkg
+          case fname of
+               Nothing => pure Nothing
+               Just srcpath  =>
+                  do let src' = up </> srcpath
+                     setSource src'
+                     update ROpts { mainfile := Just src' }
+                     pure (Just src')
+    where
+      dropHead : String -> List String -> List String
+      dropHead str [] = []
+      dropHead str (x :: xs)
+          = if x == str then xs else x :: xs
